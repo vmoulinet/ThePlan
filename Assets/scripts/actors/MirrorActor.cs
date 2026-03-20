@@ -12,19 +12,40 @@ public class MirrorActor : MonoBehaviour
 	public Transform MirrorPivotX;
 	public GameObject IntactVisual;
 
-	[Header("Triangle Links")]
-	public Transform AgentA;
-	public Transform AgentB;
-
 	[Header("Movement")]
 	public float Mass = 1f;
 	public float AttractionStrength = 1.5f;
 	public float Damping = 0.98f;
 	public float RotationSpeed = 8f;
+	public float SteeringAcceleration = 8f;
+	public float BrakingAcceleration = 10f;
+	public float MaxGroundSpeed = 3.5f;
+	public float WallSlideDamping = 0.97f;
+	public float DirectionResponsiveness = 4f;
+	public float VelocityResponsiveness = 3f;
+	public float MinRotationSpeed = 0.2f;
+
+	[Header("Avoidance")]
+	public float AvoidanceLookAhead = 1.4f;
+	public float AvoidanceProbeRadius = 0.35f;
+	public float AvoidanceStrength = 3f;
+	public float AvoidanceSideBias = 0.25f;
+	public LayerMask AvoidanceMask = ~0;
+
+	[Header("Debris Bulldozer")]
+	public float DebrisPushForce = 18f;
+	public float DebrisPushMaxMass = 0.35f;
+	public float DebrisPushUpward = 0.05f;
+	public float DebrisPushRadius = 0.6f;
 
 	[Header("Noise")]
 	public float NoiseStrength = 0.1f;
 	public float NoiseFrequency = 1f;
+
+	[Header("Physics")]
+	public bool UseGravity = true;
+	public float Downforce = 2f;
+	public float GroundStickVelocity = -0.5f;
 
 	[Header("Panel X")]
 	public float PanelXAngle = 0f;
@@ -41,7 +62,6 @@ public class MirrorActor : MonoBehaviour
 
 	[HideInInspector] public Vector3 CircleTarget;
 
-	Vector3 velocity;
 	Vector3 last_break_impact_velocity = Vector3.zero;
 	Vector3 last_break_impact_direction = Vector3.zero;
 	float last_break_impact_speed = 0f;
@@ -50,6 +70,12 @@ public class MirrorActor : MonoBehaviour
 	float panel_x_current = 0f;
 	Quaternion panel_base_local_rotation = Quaternion.identity;
 	bool panel_base_rotation_cached = false;
+	Rigidbody rb;
+	Vector3 last_desired_planar_velocity = Vector3.zero;
+	Vector3 smoothed_desired_planar_velocity = Vector3.zero;
+	Vector3 smoothed_facing_direction = Vector3.forward;
+	Collider[] debris_push_hits = new Collider[12];
+	Collider[] own_colliders;
 
 	public bool IsBroken
 	{
@@ -63,7 +89,33 @@ public class MirrorActor : MonoBehaviour
 	{
 		get
 		{
-			return velocity;
+			return rb != null ? rb.linearVelocity : Vector3.zero;
+		}
+	}
+
+	public Vector3 PlanarVelocity
+	{
+		get
+		{
+			Vector3 value = Velocity;
+			value.y = 0f;
+			return value;
+		}
+	}
+
+	public Vector3 WorldPosition
+	{
+		get
+		{
+			return rb != null ? rb.position : transform.position;
+		}
+	}
+
+	public Quaternion WorldRotation
+	{
+		get
+		{
+			return rb != null ? rb.rotation : transform.rotation;
 		}
 	}
 
@@ -91,26 +143,6 @@ public class MirrorActor : MonoBehaviour
 		}
 	}
 
-	public bool AtCircleTarget(float tolerance)
-	{
-		Vector3 a = transform.position;
-		Vector3 b = CircleTarget;
-		a.y = 0f;
-		b.y = 0f;
-		return Vector3.Distance(a, b) <= tolerance;
-	}
-
-	public bool IsOrientedToPoint(Vector3 point, float toleranceDegrees)
-	{
-		Vector3 to_point = point - transform.position;
-		to_point.y = 0f;
-
-		if (to_point.sqrMagnitude <= 0.0001f)
-			return true;
-
-		return Vector3.Angle(transform.forward, to_point.normalized) <= toleranceDegrees;
-	}
-
 	public float CurrentPanelXAngle
 	{
 		get
@@ -119,10 +151,59 @@ public class MirrorActor : MonoBehaviour
 		}
 	}
 
-	void Start()
+	public bool AtCircleTarget(float tolerance)
 	{
-		velocity = Random.insideUnitSphere * 0.3f;
-		velocity.y = 0f;
+		Vector3 a = WorldPosition;
+		Vector3 b = CircleTarget;
+		a.y = 0f;
+		b.y = 0f;
+		return Vector3.Distance(a, b) <= tolerance;
+	}
+
+	public bool IsOrientedToPoint(Vector3 point, float toleranceDegrees)
+	{
+		Vector3 to_point = point - WorldPosition;
+		to_point.y = 0f;
+
+		if (to_point.sqrMagnitude <= 0.0001f)
+			return true;
+
+		Vector3 forward = WorldRotation * Vector3.forward;
+		forward.y = 0f;
+
+		if (forward.sqrMagnitude <= 0.0001f)
+			return true;
+
+		return Vector3.Angle(forward.normalized, to_point.normalized) <= toleranceDegrees;
+	}
+
+	void Awake()
+	{
+		rb = GetComponent<Rigidbody>();
+		if (rb == null)
+		{
+			Debug.LogError(name + " | MirrorActor requires a Rigidbody.");
+			enabled = false;
+			return;
+		}
+
+		rb.mass = Mathf.Max(0.01f, Mass);
+		rb.useGravity = UseGravity;
+		rb.isKinematic = false;
+		rb.interpolation = RigidbodyInterpolation.Interpolate;
+		rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+		rb.constraints =
+			RigidbodyConstraints.FreezeRotationX |
+			RigidbodyConstraints.FreezeRotationZ;
+
+		own_colliders = GetComponentsInChildren<Collider>(true);
+		smoothed_desired_planar_velocity = Vector3.zero;
+		smoothed_facing_direction = transform.forward;
+		smoothed_facing_direction.y = 0f;
+		if (smoothed_facing_direction.sqrMagnitude <= 0.0001f)
+			smoothed_facing_direction = Vector3.forward;
+		else
+			smoothed_facing_direction.Normalize();
 
 		CachePanelBaseRotation();
 		panel_x_target = PanelXAngle;
@@ -136,168 +217,373 @@ public class MirrorActor : MonoBehaviour
 			return;
 
 		UpdatePanelX();
+	}
+
+	void FixedUpdate()
+	{
+		if (is_broken)
+			return;
+
+		if (rb == null)
+			return;
 
 		if (MirrorManager == null || MirrorManager.ChoreographyManager == null)
 			return;
 
-		UpdateMovement();
-		UpdateBodyRotation();
+		rb.mass = Mathf.Max(0.01f, Mass);
+		rb.useGravity = UseGravity;
 
-		velocity *= Damping;
-		transform.position += velocity * Time.deltaTime;
+		Vector3 desired_planar_velocity = ComputeDesiredPlanarVelocity();
+		desired_planar_velocity = ApplyObstacleAvoidance(desired_planar_velocity);
+
+		smoothed_desired_planar_velocity = Vector3.Lerp(
+			smoothed_desired_planar_velocity,
+			desired_planar_velocity,
+			1f - Mathf.Exp(-VelocityResponsiveness * Time.fixedDeltaTime)
+		);
+		last_desired_planar_velocity = smoothed_desired_planar_velocity;
+
+		ApplyPlanarSteering(smoothed_desired_planar_velocity);
+		ApplyGrounding();
+		ClampPlanarSpeed();
+		PushNearbyDebris();
+		UpdateBodyRotation();
 	}
 
-	void UpdateMovement()
+	Vector3 ComputeDesiredPlanarVelocity()
 	{
 		ChoreographyManager choreography = MirrorManager.ChoreographyManager;
 
 		switch (choreography.CurrentState)
 		{
 			case ChoreographyState.Triangle:
-				UpdateTriangle(choreography);
-				break;
+				return ComputeTriangleVelocity(choreography);
 
 			case ChoreographyState.Spiral:
-				UpdateSpiral(choreography);
-				break;
+				return ComputeSpiralVelocity(choreography);
 
 			case ChoreographyState.Circle:
-				UpdateCircle(choreography);
-				break;
+				return ComputeCircleVelocity(choreography);
 
 			case ChoreographyState.Chaos:
-				UpdateChaos(choreography);
-				break;
+				return ComputeChaosVelocity(choreography);
 
 			case ChoreographyState.Scatter:
-				UpdateScatter(choreography);
-				break;
+				return ComputeScatterVelocity(choreography);
 
 			case ChoreographyState.Line:
-				UpdateLine(choreography);
-				break;
+				return ComputeLineVelocity(choreography);
 
 			case ChoreographyState.Pause:
-				UpdatePause();
-				break;
+				return Vector3.zero;
 		}
+
+		return Vector3.zero;
 	}
 
-	void UpdateTriangle(ChoreographyManager choreography)
+	Vector3 ComputeTriangleVelocity(ChoreographyManager choreography)
 	{
-		Vector3 target = TriangleTarget(choreography);
-		Vector3 force = (target - transform.position) * AttractionStrength;
-		force += Noise();
-		force += AnchorCouplingForce(choreography);
-		ApplyForce(force);
+		Vector3 target = choreography.GetTriangleTargetFor(this);
+		return BuildDesiredVelocity(target, AttractionStrength, true, choreography);
 	}
 
-	Vector3 TriangleTarget(ChoreographyManager choreography)
-	{
-		if (AgentA == null || AgentB == null)
-			return transform.position;
-
-		Vector3 a = AgentA.position;
-		Vector3 b = AgentB.position;
-		a.y = b.y = transform.position.y;
-
-		Vector3 mid = (a + b) * 0.5f;
-		Vector3 axis = b - a;
-
-		if (axis.sqrMagnitude <= 0.0001f)
-			return transform.position;
-
-		Vector3 normal = new Vector3(-axis.z, 0f, axis.x).normalized;
-		float signed_distance = Vector3.Dot(transform.position - mid, normal);
-		float target_distance = Mathf.Clamp(Mathf.Abs(signed_distance), choreography.TriangleMinDistance, choreography.TriangleMaxDistance);
-
-		return mid + normal * (signed_distance < 0f ? -target_distance : target_distance);
-	}
-
-	void UpdateSpiral(ChoreographyManager choreography)
+	Vector3 ComputeSpiralVelocity(ChoreographyManager choreography)
 	{
 		Vector3 center = choreography.GetResolvedAnchorPoint();
-		Vector3 to_center = transform.position - center;
+		Vector3 to_center = WorldPosition - center;
 		to_center.y = 0f;
 
 		if (to_center.sqrMagnitude <= 0.0001f)
-			return;
+			return Vector3.zero;
 
 		Vector3 tangent = new Vector3(-to_center.z, 0f, to_center.x).normalized;
-		Vector3 force = tangent * choreography.SpiralStrength;
-		force += AnchorCouplingForce(choreography);
-		ApplyForce(force);
+		Vector3 desired = tangent * choreography.SpiralStrength;
+		desired += ComputeAnchorIntent(choreography);
+		return ClampDesiredVelocity(desired + NoiseVelocity());
 	}
 
-	void UpdateCircle(ChoreographyManager choreography)
+	Vector3 ComputeCircleVelocity(ChoreographyManager choreography)
 	{
-		float distance = Vector3.Distance(transform.position, CircleTarget);
+		if (AtCircleTarget(choreography.ToleranceRadius))
+			return Vector3.zero;
 
-		if (distance <= choreography.ToleranceRadius)
-		{
-			Snap(CircleTarget);
-			return;
-		}
-
-		Vector3 force = (CircleTarget - transform.position) * AttractionStrength;
-		force += AnchorCouplingForce(choreography);
-		ApplyForce(force);
+		return BuildDesiredVelocity(CircleTarget, AttractionStrength, true, choreography);
 	}
 
-	void UpdateChaos(ChoreographyManager choreography)
+	Vector3 ComputeChaosVelocity(ChoreographyManager choreography)
 	{
 		Vector3 center = choreography.GetResolvedAnchorPoint();
-		Vector3 to_center = center - transform.position;
+		Vector3 to_center = center - WorldPosition;
 		to_center.y = 0f;
 
 		Vector3 tangent = Vector3.zero;
 		if (to_center.sqrMagnitude > 0.0001f)
 			tangent = new Vector3(-to_center.z, 0f, to_center.x).normalized;
 
-		Vector3 force = to_center.sqrMagnitude > 0.0001f ? to_center.normalized * choreography.ChaosStrength : Vector3.zero;
-		force += tangent * choreography.ChaosOrbitStrength;
-		force += Noise();
-		ApplyForce(force);
+		Vector3 desired = Vector3.zero;
+		if (to_center.sqrMagnitude > 0.0001f)
+			desired += to_center.normalized * choreography.ChaosStrength;
+
+		desired += tangent * choreography.ChaosOrbitStrength;
+		desired += NoiseVelocity();
+		return ClampDesiredVelocity(desired);
 	}
 
-	void UpdateScatter(ChoreographyManager choreography)
+	Vector3 ComputeScatterVelocity(ChoreographyManager choreography)
 	{
 		Vector3 center = choreography.GetResolvedAnchorPoint();
-		Vector3 away = transform.position - center;
+		Vector3 away = WorldPosition - center;
 		away.y = 0f;
 
-		Vector3 force = Vector3.zero;
+		Vector3 desired = Vector3.zero;
 		if (away.sqrMagnitude > 0.0001f)
-			force += away.normalized * choreography.ScatterStrength;
+			desired += away.normalized * choreography.ScatterStrength;
 
-		force += Noise();
-		force += AnchorCouplingForce(choreography);
-		ApplyForce(force);
+		desired += NoiseVelocity();
+		desired += ComputeAnchorIntent(choreography);
+		return ClampDesiredVelocity(desired);
 	}
 
-	void UpdateLine(ChoreographyManager choreography)
+	Vector3 ComputeLineVelocity(ChoreographyManager choreography)
 	{
 		Vector3 target = choreography.GetLineTargetFor(this);
-		Vector3 force = (target - transform.position) * AttractionStrength;
-		force += AnchorCouplingForce(choreography);
-		ApplyForce(force);
+		return BuildDesiredVelocity(target, AttractionStrength, true, choreography);
 	}
 
-	void UpdatePause()
+	Vector3 BuildDesiredVelocity(Vector3 target, float strength, bool include_anchor, ChoreographyManager choreography)
 	{
-		velocity *= 0.9f;
+		Vector3 to_target = target - WorldPosition;
+		to_target.y = 0f;
+
+		if (to_target.sqrMagnitude <= 0.0001f)
+			return Vector3.zero;
+
+		Vector3 desired = to_target.normalized * Mathf.Min(MaxGroundSpeed, to_target.magnitude * Mathf.Max(0.01f, strength));
+		desired += NoiseVelocity();
+
+		if (include_anchor)
+			desired += ComputeAnchorIntent(choreography);
+
+		return ClampDesiredVelocity(desired);
+	}
+
+	Vector3 ComputeAnchorIntent(ChoreographyManager choreography)
+	{
+		Vector3 anchor = choreography.GetResolvedAnchorPoint();
+		Vector3 to_anchor = anchor - WorldPosition;
+		to_anchor.y = 0f;
+
+		if (to_anchor.sqrMagnitude <= 0.0001f)
+			return Vector3.zero;
+
+		return to_anchor.normalized * choreography.AnchorPullStrength;
+	}
+
+	Vector3 NoiseVelocity()
+	{
+		float seed = Mathf.Abs(GetInstanceID()) * 0.00137f;
+		float x = Mathf.PerlinNoise(seed, Time.time * NoiseFrequency) - 0.5f;
+		float z = Mathf.PerlinNoise(seed + 31.73f, Time.time * NoiseFrequency) - 0.5f;
+		return new Vector3(x, 0f, z) * NoiseStrength;
+	}
+
+	Vector3 ClampDesiredVelocity(Vector3 desired)
+	{
+		desired.y = 0f;
+		return Vector3.ClampMagnitude(desired, MaxGroundSpeed);
+	}
+
+	Vector3 ApplyObstacleAvoidance(Vector3 desired_planar_velocity)
+	{
+		Vector3 desired_direction = desired_planar_velocity;
+		desired_direction.y = 0f;
+		if (desired_direction.sqrMagnitude <= 0.0001f)
+			return desired_planar_velocity;
+
+		desired_direction.Normalize();
+
+		Vector3 probe_origin = WorldPosition + Vector3.up * 0.35f;
+		float probe_distance = Mathf.Max(AvoidanceLookAhead, DebrisPushRadius);
+
+		if (!Physics.SphereCast(probe_origin, AvoidanceProbeRadius, desired_direction, out RaycastHit hit, probe_distance, AvoidanceMask, QueryTriggerInteraction.Ignore))
+			return desired_planar_velocity;
+
+		if (hit.collider == null)
+			return desired_planar_velocity;
+
+		if (hit.collider.transform.IsChildOf(transform))
+			return desired_planar_velocity;
+
+		if (hit.collider.CompareTag(PendulumTag))
+			return desired_planar_velocity;
+
+		if (IsIgnorableDebris(hit.collider))
+			return desired_planar_velocity;
+
+		Vector3 normal = hit.normal;
+		normal.y = 0f;
+		if (normal.sqrMagnitude <= 0.0001f)
+			return desired_planar_velocity;
+
+		normal.Normalize();
+
+		Vector3 slide_direction = Vector3.ProjectOnPlane(desired_direction, normal);
+		slide_direction.y = 0f;
+		if (slide_direction.sqrMagnitude <= 0.0001f)
+		{
+			Vector3 side = Vector3.Cross(Vector3.up, normal);
+			slide_direction = side * GetAvoidanceSideSign(desired_direction, normal);
+		}
+
+		slide_direction.y = 0f;
+		if (slide_direction.sqrMagnitude <= 0.0001f)
+			return desired_planar_velocity;
+
+		slide_direction.Normalize();
+
+		float speed = desired_planar_velocity.magnitude;
+		Vector3 avoided_velocity = Vector3.Lerp(
+			desired_planar_velocity,
+			slide_direction * speed,
+			Mathf.Clamp01(AvoidanceStrength / Mathf.Max(0.0001f, speed + AvoidanceStrength))
+		);
+
+		return ClampDesiredVelocity(avoided_velocity);
+	}
+
+	float GetAvoidanceSideSign(Vector3 desired_direction, Vector3 normal)
+	{
+		Vector3 left = Vector3.Cross(Vector3.up, desired_direction);
+		float side = Vector3.Dot(left, normal);
+		if (Mathf.Abs(side) <= 0.0001f)
+			return AvoidanceSideBias >= 0f ? 1f : -1f;
+		return side >= 0f ? -1f : 1f;
+	}
+
+	void ApplyPlanarSteering(Vector3 desired_planar_velocity)
+	{
+		Vector3 current_planar_velocity = PlanarVelocity;
+		Vector3 desired_delta = desired_planar_velocity - current_planar_velocity;
+
+		float acceleration = desired_planar_velocity.sqrMagnitude > 0.0001f ? SteeringAcceleration : BrakingAcceleration;
+		Vector3 steering = desired_delta * acceleration;
+		steering.y = 0f;
+
+		rb.AddForce(steering, ForceMode.Acceleration);
+
+		if (desired_planar_velocity.sqrMagnitude <= 0.0001f)
+		{
+			Vector3 damped = Vector3.Lerp(current_planar_velocity, Vector3.zero, 1f - Mathf.Exp(-BrakingAcceleration * Time.fixedDeltaTime));
+			Vector3 full_velocity = rb.linearVelocity;
+			full_velocity.x = damped.x;
+			full_velocity.z = damped.z;
+			rb.linearVelocity = full_velocity;
+		}
+	}
+
+	void ApplyGrounding()
+	{
+		if (rb == null)
+			return;
+
+		if (UseGravity)
+			rb.AddForce(Vector3.down * Downforce, ForceMode.Acceleration);
+
+		Vector3 full_velocity = rb.linearVelocity;
+		if (full_velocity.y < GroundStickVelocity)
+			full_velocity.y = GroundStickVelocity;
+		rb.linearVelocity = full_velocity;
+	}
+
+	void ClampPlanarSpeed()
+	{
+		Vector3 full_velocity = rb.linearVelocity;
+		Vector3 planar = new Vector3(full_velocity.x, 0f, full_velocity.z);
+
+		if (planar.sqrMagnitude > MaxGroundSpeed * MaxGroundSpeed)
+		{
+			planar = planar.normalized * MaxGroundSpeed;
+			full_velocity.x = planar.x;
+			full_velocity.z = planar.z;
+			rb.linearVelocity = full_velocity;
+		}
+	}
+
+	void PushNearbyDebris()
+	{
+		if (rb == null || DebrisPushForce <= 0f || DebrisPushRadius <= 0f)
+			return;
+
+		Vector3 push_direction = PlanarVelocity;
+		if (push_direction.sqrMagnitude <= 0.0001f)
+			push_direction = last_desired_planar_velocity;
+
+		push_direction.y = 0f;
+		if (push_direction.sqrMagnitude <= 0.0001f)
+			return;
+
+		push_direction.Normalize();
+
+		Vector3 overlap_center = WorldPosition + push_direction * (DebrisPushRadius * 0.6f) + Vector3.up * 0.25f;
+		int hit_count = Physics.OverlapSphereNonAlloc(overlap_center, DebrisPushRadius, debris_push_hits, AvoidanceMask, QueryTriggerInteraction.Ignore);
+
+		for (int i = 0; i < hit_count; i++)
+		{
+			Collider hit = debris_push_hits[i];
+			if (hit == null)
+				continue;
+
+			if (hit.transform.IsChildOf(transform))
+				continue;
+
+			if (hit.CompareTag(PendulumTag))
+				continue;
+
+			Rigidbody hit_body = hit.attachedRigidbody;
+			if (hit_body == null || hit_body == rb || hit_body.isKinematic)
+				continue;
+
+			if (hit_body.mass > DebrisPushMaxMass)
+				continue;
+
+			IgnoreDebrisCollision(hit);
+			Vector3 impulse = push_direction;
+			impulse.y = DebrisPushUpward;
+			impulse.Normalize();
+
+			hit_body.AddForce(impulse * DebrisPushForce, ForceMode.Acceleration);
+		}
 	}
 
 	void UpdateBodyRotation()
 	{
-		Vector3 direction = velocity;
-		direction.y = 0f;
-
-		if (direction.sqrMagnitude < 0.0001f)
+		if (rb == null)
 			return;
 
-		Quaternion target_rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
-		transform.rotation = Quaternion.Slerp(transform.rotation, target_rotation, RotationSpeed * Time.deltaTime);
+		Vector3 target_direction = PlanarVelocity;
+		if (target_direction.sqrMagnitude < MinRotationSpeed * MinRotationSpeed)
+			target_direction = last_desired_planar_velocity;
+
+		target_direction.y = 0f;
+		if (target_direction.sqrMagnitude < 0.0001f)
+			return;
+
+		target_direction.Normalize();
+		smoothed_facing_direction = Vector3.Slerp(
+			smoothed_facing_direction,
+			target_direction,
+			1f - Mathf.Exp(-DirectionResponsiveness * Time.fixedDeltaTime)
+		);
+
+		smoothed_facing_direction.y = 0f;
+		if (smoothed_facing_direction.sqrMagnitude < 0.0001f)
+			return;
+
+		smoothed_facing_direction.Normalize();
+
+		Quaternion target_rotation = Quaternion.LookRotation(smoothed_facing_direction, Vector3.up);
+		Quaternion next_rotation = Quaternion.Slerp(rb.rotation, target_rotation, 1f - Mathf.Exp(-RotationSpeed * Time.fixedDeltaTime));
+		rb.MoveRotation(next_rotation);
 	}
 
 	void UpdatePanelX()
@@ -326,41 +612,40 @@ public class MirrorActor : MonoBehaviour
 		}
 	}
 
-	Vector3 AnchorCouplingForce(ChoreographyManager choreography)
-	{
-		Vector3 anchor = choreography.GetResolvedAnchorPoint();
-		Vector3 to_anchor = anchor - transform.position;
-		to_anchor.y = 0f;
-
-		if (to_anchor.sqrMagnitude <= 0.0001f)
-			return Vector3.zero;
-
-		return to_anchor.normalized * choreography.AnchorPullStrength;
-	}
-
-	void ApplyForce(Vector3 force)
-	{
-		force.y = 0f;
-
-		velocity += (force / Mathf.Max(0.0001f, Mass)) * Time.deltaTime;
-		velocity = Vector3.ClampMagnitude(velocity, MirrorManager != null ? MirrorManager.MaxSpeed : 2f);
-	}
-
-	Vector3 Noise()
-	{
-		float n = Mathf.PerlinNoise(Time.time * NoiseFrequency, GetInstanceID()) - 0.5f;
-		return new Vector3(n, 0f, -n) * NoiseStrength;
-	}
-
 	void Snap(Vector3 position_to_snap)
 	{
-		transform.position = position_to_snap;
-		velocity = Vector3.zero;
+		position_to_snap.y = WorldPosition.y;
+
+		if (rb != null)
+		{
+			rb.linearVelocity = Vector3.zero;
+			rb.angularVelocity = Vector3.zero;
+			rb.position = position_to_snap;
+			transform.position = position_to_snap;
+		}
+		else
+		{
+			transform.position = position_to_snap;
+		}
 	}
 
 	public void Initialize(MirrorManager mirror_manager)
 	{
 		MirrorManager = mirror_manager;
+	}
+
+	public void ApplySpawnOffset(Vector3 offset)
+	{
+		if (rb != null)
+		{
+			Vector3 next_position = rb.position + offset;
+			rb.position = next_position;
+			transform.position = next_position;
+		}
+		else
+		{
+			transform.position += offset;
+		}
 	}
 
 	public void ResetToSpawn(MirrorSpawnPoint spawn_point)
@@ -370,10 +655,33 @@ public class MirrorActor : MonoBehaviour
 
 		is_broken = false;
 
-		transform.rotation = spawn_point.transform.rotation;
-		transform.position = spawn_point.transform.position;
+		Vector3 spawn_position = spawn_point.transform.position;
+		Quaternion spawn_rotation = spawn_point.transform.rotation;
 
-		velocity = Vector3.zero;
+		if (rb != null)
+		{
+			rb.linearVelocity = Vector3.zero;
+			rb.angularVelocity = Vector3.zero;
+			rb.rotation = spawn_rotation;
+			rb.position = spawn_position;
+			transform.rotation = spawn_rotation;
+			transform.position = spawn_position;
+		}
+		else
+		{
+			transform.rotation = spawn_rotation;
+			transform.position = spawn_position;
+		}
+
+		last_desired_planar_velocity = Vector3.zero;
+		smoothed_desired_planar_velocity = Vector3.zero;
+		smoothed_facing_direction = spawn_rotation * Vector3.forward;
+		smoothed_facing_direction.y = 0f;
+		if (smoothed_facing_direction.sqrMagnitude <= 0.0001f)
+			smoothed_facing_direction = Vector3.forward;
+		else
+			smoothed_facing_direction.Normalize();
+
 		last_break_impact_velocity = Vector3.zero;
 		last_break_impact_direction = Vector3.zero;
 		last_break_impact_speed = 0f;
@@ -429,12 +737,108 @@ public class MirrorActor : MonoBehaviour
 
 	void OnCollisionEnter(Collision collision)
 	{
-		TryBreak(collision.collider, collision.GetContact(0).point);
+		if (collision.collider != null && IsIgnorableDebris(collision.collider))
+		{
+			IgnoreDebrisCollision(collision.collider);
+			return;
+		}
+
+		if (collision.contacts.Length > 0)
+		{
+			TryBreak(collision.collider, collision.contacts[0].point);
+			ApplyWallSlide(collision);
+		}
+	}
+
+	void OnCollisionStay(Collision collision)
+	{
+		if (collision.collider != null && IsIgnorableDebris(collision.collider))
+		{
+			IgnoreDebrisCollision(collision.collider);
+			return;
+		}
+
+		ApplyWallSlide(collision);
+	}
+
+	void ApplyWallSlide(Collision collision)
+	{
+		if (rb == null)
+			return;
+
+		if (collision.collider != null && collision.collider.CompareTag(PendulumTag))
+			return;
+
+		if (collision.contacts == null || collision.contacts.Length == 0)
+			return;
+
+		Vector3 planar_velocity = PlanarVelocity;
+		if (planar_velocity.sqrMagnitude <= 0.0001f)
+			return;
+
+		for (int i = 0; i < collision.contacts.Length; i++)
+		{
+			Vector3 normal = collision.contacts[i].normal;
+			normal.y = 0f;
+
+			if (normal.sqrMagnitude <= 0.0001f)
+				continue;
+
+			normal.Normalize();
+			float push_into_wall = Vector3.Dot(planar_velocity, -normal);
+			if (push_into_wall <= 0f)
+				continue;
+
+			planar_velocity = Vector3.ProjectOnPlane(planar_velocity, normal) * WallSlideDamping;
+			planar_velocity += Vector3.ProjectOnPlane(last_desired_planar_velocity, normal) * (1f - WallSlideDamping);
+		}
+
+		Vector3 full_velocity = rb.linearVelocity;
+		full_velocity.x = planar_velocity.x;
+		full_velocity.z = planar_velocity.z;
+		rb.linearVelocity = full_velocity;
+	}
+
+	bool IsIgnorableDebris(Collider other)
+	{
+		if (other == null)
+			return false;
+
+		if (other.transform.IsChildOf(transform))
+			return false;
+
+		if (other.CompareTag(PendulumTag))
+			return false;
+
+		MirrorDebris debris = other.GetComponentInParent<MirrorDebris>();
+		if (debris == null)
+			return false;
+
+		Rigidbody other_body = other.attachedRigidbody;
+		if (other_body == null || other_body == rb || other_body.isKinematic)
+			return false;
+
+		return other_body.mass <= DebrisPushMaxMass;
+	}
+
+	void IgnoreDebrisCollision(Collider other)
+	{
+		if (!IsIgnorableDebris(other) || own_colliders == null)
+			return;
+
+		for (int i = 0; i < own_colliders.Length; i++)
+		{
+			Collider own = own_colliders[i];
+			if (own == null || own == other)
+				continue;
+
+			Physics.IgnoreCollision(own, other, true);
+		}
 	}
 
 	void OnTriggerEnter(Collider other)
 	{
-		TryBreak(other, other.ClosestPoint(transform.position));
+		TryBreak(other, other.ClosestPoint(WorldPosition));
 	}
 
 	void TryBreak(Collider other, Vector3 impact_point)
@@ -471,6 +875,12 @@ public class MirrorActor : MonoBehaviour
 	{
 		is_broken = true;
 
+		if (rb != null)
+		{
+			rb.linearVelocity = Vector3.zero;
+			rb.angularVelocity = Vector3.zero;
+		}
+
 		if (IntactVisual != null)
 			IntactVisual.SetActive(false);
 
@@ -497,7 +907,10 @@ public class MirrorActor : MonoBehaviour
 			return;
 
 		Gizmos.color = Color.cyan;
-		Gizmos.DrawLine(transform.position, transform.position + velocity);
+		Gizmos.DrawLine(WorldPosition, WorldPosition + PlanarVelocity);
+
+		Gizmos.color = Color.yellow;
+		Gizmos.DrawLine(WorldPosition, WorldPosition + last_desired_planar_velocity);
 
 		if (MirrorPivotX != null)
 		{

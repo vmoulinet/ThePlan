@@ -23,13 +23,6 @@ public class MirrorManager : MonoBehaviour
 	public float RespawnDelay = 1.0f;
 	public float RespawnRingSpacing = 0.75f;
 
-	[Header("Separation")]
-	public float SeparationRadius = 3f;
-	public float SeparationStrength = 10f;
-
-	[Header("Motion")]
-	public float MaxSpeed = 2f;
-
 	[Header("Debris Impact")]
 	public float DebrisForce = 9f;
 	public float DebrisRadius = 3.5f;
@@ -122,7 +115,7 @@ public class MirrorManager : MonoBehaviour
 		mirror.ResetToSpawn(spawnPoint);
 
 		Vector3 offset = GetSpawnOffset(spawnIndex);
-		mirror.transform.position += offset;
+		mirror.ApplySpawnOffset(offset);
 
 		ActiveMirrors.Add(mirror);
 
@@ -215,7 +208,7 @@ public class MirrorManager : MonoBehaviour
 
 		MirrorSpawnPoint spawnPoint = spawnPoints[respawnIndex % spawnPoints.Count];
 		mirror.ResetToSpawn(spawnPoint);
-		mirror.transform.position += GetSpawnOffset(respawnIndex);
+		mirror.ApplySpawnOffset(GetSpawnOffset(respawnIndex));
 
 		if (ChoreographyManager != null)
 			ChoreographyManager.RefreshTargets();
@@ -253,37 +246,11 @@ public class MirrorManager : MonoBehaviour
 			if (mirror == null || mirror.IsBroken || !mirror.gameObject.activeInHierarchy)
 				continue;
 
-			center += mirror.transform.position;
+			center += mirror.WorldPosition;
 			count++;
 		}
 
 		cachedCenter = count == 0 ? transform.position : center / count;
 		return cachedCenter;
-	}
-
-	public Vector3 GetSeparationForce(MirrorActor self, float radius, float strength)
-	{
-		Vector3 total = Vector3.zero;
-		Vector3 selfPos = self.transform.position;
-
-		for (int i = 0; i < ActiveMirrors.Count; i++)
-		{
-			MirrorActor other = ActiveMirrors[i];
-
-			if (other == null || other == self || other.IsBroken || !other.gameObject.activeInHierarchy)
-				continue;
-
-			Vector3 delta = selfPos - other.transform.position;
-			delta.y = 0f;
-
-			float distance = delta.magnitude;
-			if (distance <= 0.0001f || distance > radius)
-				continue;
-
-			float push = 1f - (distance / radius);
-			total += delta.normalized * (push * strength);
-		}
-
-		return total;
 	}
 }

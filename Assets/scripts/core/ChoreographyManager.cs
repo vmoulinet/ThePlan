@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,26 +21,42 @@ public class ChoreographyManager : MonoBehaviour
 
 	[Header("Mode")]
 	public ChoreographyState CurrentState = ChoreographyState.Triangle;
-	public bool AutoCycle = true;
 
 	[Header("Debug")]
 	public bool DebugChoreography = true;
-	public bool DebugPartners = true;
 	public bool DebugCircleTargets = true;
 	public float DebugLogInterval = 1f;
+	public bool DebugTriangleLinks = false;
+	public Material DebugTriangleLineMaterial;
+	public float DebugTriangleLineWidth = 0.03f;
+	public float DebugTriangleLineHeight = 0.15f;
 
 	[Header("Triangle")]
 	public float TriangleMinDistance = 1f;
 	public float TriangleMaxDistance = 2.5f;
-
-	[Header("Global Motion")]
-	public float MaxSpeed = 2f;
 	public float ToleranceRadius = 0.05f;
+	public float TriangleStableDistanceTolerance = 0.5f;
+	public float TriangleStableSpeedThreshold = 0.45f;
+	public float TriangleStableHoldDuration = 1.2f;
+	public float TriangleStableAverageSpeedThreshold = 0.25f;
+	public float TriangleStableAnchorDistanceTolerance = 6f;
+	public float TriangleStableCenterDistanceTolerance = 0.75f;
+	public float TriangleStablePartnerDistanceTolerance = 2.5f;
+	public float TriangleStablePartnerDistanceVarianceTolerance = 2.0f;
 
 	[Header("Anchor Coupling")]
 	public float AnchorPullStrength = 0.35f;
 	public float AnchorOuterLimit = 8f;
 	public float AnchorOuterPullStrength = 1.5f;
+
+	[Header("Pattern Cycle")]
+	public float PatternDurationMin = 4f;
+	public float PatternDurationMax = 8f;
+	public bool IncludeSpiral = true;
+	public bool IncludeCircle = true;
+	public bool IncludeChaos = true;
+	public bool IncludeScatter = true;
+	public bool IncludeLine = true;
 
 	[Header("Spiral")]
 	public float SpiralInterval = 30f;
@@ -75,11 +92,29 @@ public class ChoreographyManager : MonoBehaviour
 
 	[HideInInspector] public CirclePhase CurrentCirclePhase = CirclePhase.Move;
 
-	float intervalTimer;
-	float spiralTimer;
+	public event Action<ChoreographyState> ChoreographyStateEntered;
+	public event Action<ChoreographyState> ChoreographyStateExited;
+	public event Action<ChoreographyState> ChoreographyPatternStarted;
+	public event Action<ChoreographyState> ChoreographyPatternCompleted;
+	public event Action TriangleSettled;
+
 	float circleHoldTimer;
 	float debugLogTimer;
 	float circlePhaseTimer;
+	float triangleStableTimer;
+	float activePatternTimer;
+	float activePatternDuration;
+	string lastTriangleUnstableReason = "";
+	float lastTriangleAverageDistanceToTarget = 0f;
+	float lastTriangleMaxDistanceToTarget = 0f;
+	float lastTriangleAverageDistanceToAnchor = 0f;
+	float lastTriangleMaxSpeed = 0f;
+	bool triangleSettledThisCycle;
+	ChoreographyState activeRandomPattern = ChoreographyState.Triangle;
+	ChoreographyState lastRandomPattern = ChoreographyState.Triangle;
+	readonly List<LineRenderer> debugTriangleLines = new List<LineRenderer>();
+	Transform debugTriangleLinesRoot;
+	readonly Dictionary<MirrorActor, MirrorActor[]> trianglePartners = new Dictionary<MirrorActor, MirrorActor[]>();
 
 	public void Initialize(SimulationManager sim)
 	{
@@ -87,46 +122,450 @@ public class ChoreographyManager : MonoBehaviour
 			MirrorManager = sim.MirrorManager;
 	}
 
-	void Start()
-	{
-		AssignTrianglePartners();
-	}
-
 	void Update()
 	{
 		if (MirrorManager == null)
 			return;
 
-		if (AutoCycle)
-			UpdateAutoCycle();
+		UpdateAutoCycle();
+
+		UpdateTriangleDebugLines();
 
 		UpdateDebugLogging();
+	}
+	void UpdateTriangleDebugLines()
+	{
+		if (!DebugTriangleLinks || CurrentState != ChoreographyState.Triangle)
+		{
+			ClearTriangleDebugLines();
+			return;
+		}
+
+		List<MirrorActor> actors = GetActiveActors();
+		if (actors.Count < 3)
+		{
+			ClearTriangleDebugLines();
+			return;
+		}
+
+		EnsureTrianglePartners();
+		EnsureTriangleDebugLinesRoot();
+		EnsureTriangleDebugLineCount(actors.Count * 2);
+
+		int line_index = 0;
+		for (int i = 0; i < actors.Count; i++)
+		{
+			MirrorActor actor = actors[i];
+			if (!trianglePartners.TryGetValue(actor, out MirrorActor[] partners) || partners == null)
+				continue;
+
+			Vector3 start = actor.WorldPosition + Vector3.up * DebugTriangleLineHeight;
+
+			for (int partner_index = 0; partner_index < partners.Length; partner_index++)
+			{
+				MirrorActor partner = partners[partner_index];
+				if (partner == null)
+					continue;
+
+				Vector3 end = partner.WorldPosition + Vector3.up * DebugTriangleLineHeight;
+				ConfigureTriangleDebugLine(debugTriangleLines[line_index], actor.name + "_to_" + partner.name, start, end);
+				line_index++;
+			}
+		}
+
+		for (int i = line_index; i < debugTriangleLines.Count; i++)
+		{
+			if (debugTriangleLines[i] != null)
+				debugTriangleLines[i].enabled = false;
+		}
+	}
+	void EnsureTrianglePartners()
+	{
+		List<MirrorActor> actors = GetActiveActors();
+		if (actors.Count < 3)
+		{
+			trianglePartners.Clear();
+			return;
+		}
+
+		bool needs_rebuild = trianglePartners.Count != actors.Count;
+		if (!needs_rebuild)
+		{
+			for (int i = 0; i < actors.Count; i++)
+			{
+				if (!trianglePartners.ContainsKey(actors[i]))
+				{
+					needs_rebuild = true;
+					break;
+				}
+			}
+		}
+
+		if (needs_rebuild)
+			RebuildTrianglePartners();
+	}
+
+	void RebuildTrianglePartners()
+	{
+		trianglePartners.Clear();
+
+		List<MirrorActor> actors = GetActiveActors();
+		if (actors.Count < 3)
+			return;
+
+		for (int i = 0; i < actors.Count; i++)
+		{
+			MirrorActor actor = actors[i];
+			MirrorActor nearest_a = null;
+			MirrorActor nearest_b = null;
+			float nearest_a_distance = float.MaxValue;
+			float nearest_b_distance = float.MaxValue;
+			Vector3 actor_pos = actor.WorldPosition;
+			actor_pos.y = 0f;
+
+			for (int j = 0; j < actors.Count; j++)
+			{
+				if (i == j)
+					continue;
+
+				MirrorActor candidate = actors[j];
+				Vector3 candidate_pos = candidate.WorldPosition;
+				candidate_pos.y = 0f;
+				float distance = Vector3.Distance(actor_pos, candidate_pos);
+
+				if (distance < nearest_a_distance)
+				{
+					nearest_b = nearest_a;
+					nearest_b_distance = nearest_a_distance;
+					nearest_a = candidate;
+					nearest_a_distance = distance;
+				}
+				else if (distance < nearest_b_distance)
+				{
+					nearest_b = candidate;
+					nearest_b_distance = distance;
+				}
+			}
+
+			trianglePartners[actor] = new MirrorActor[] { nearest_a, nearest_b };
+		}
+	}
+
+	void EnsureTriangleDebugLinesRoot()
+	{
+		if (debugTriangleLinesRoot != null)
+			return;
+
+		GameObject root = new GameObject("triangle_debug_lines");
+		root.hideFlags = HideFlags.DontSave;
+		root.transform.SetParent(transform, false);
+		debugTriangleLinesRoot = root.transform;
+	}
+
+	void EnsureTriangleDebugLineCount(int required_count)
+	{
+		while (debugTriangleLines.Count < required_count)
+		{
+			GameObject line_object = new GameObject("triangle_debug_line_" + debugTriangleLines.Count);
+			line_object.hideFlags = HideFlags.DontSave;
+			line_object.transform.SetParent(debugTriangleLinesRoot, false);
+
+			LineRenderer line = line_object.AddComponent<LineRenderer>();
+			line.positionCount = 2;
+			line.useWorldSpace = true;
+			line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+			line.receiveShadows = false;
+			line.textureMode = LineTextureMode.Stretch;
+			line.alignment = LineAlignment.View;
+			line.numCapVertices = 0;
+			line.numCornerVertices = 0;
+			line.material = DebugTriangleLineMaterial != null ? DebugTriangleLineMaterial : new Material(Shader.Find("Sprites/Default"));
+			debugTriangleLines.Add(line);
+		}
+	}
+
+	void ConfigureTriangleDebugLine(LineRenderer line, string line_name, Vector3 start, Vector3 end)
+	{
+		if (line == null)
+			return;
+
+		line.name = line_name;
+		line.enabled = true;
+		line.startWidth = DebugTriangleLineWidth;
+		line.endWidth = DebugTriangleLineWidth;
+		line.SetPosition(0, start);
+		line.SetPosition(1, end);
+	}
+
+	void ClearTriangleDebugLines()
+	{
+		for (int i = 0; i < debugTriangleLines.Count; i++)
+		{
+			if (debugTriangleLines[i] != null)
+				debugTriangleLines[i].enabled = false;
+		}
 	}
 
 	void UpdateAutoCycle()
 	{
-		intervalTimer += Time.deltaTime;
-
-		if (CurrentState == ChoreographyState.Triangle && intervalTimer >= SpiralInterval)
-			StartSpiral();
-
-		if (CurrentState == ChoreographyState.Spiral)
+		if (CurrentState == ChoreographyState.Triangle)
 		{
-			spiralTimer += Time.deltaTime;
-
-			if (spiralTimer >= SpiralDuration)
-				StartCircle();
+			UpdateTriangleAutoCycle();
+			return;
 		}
 
+		UpdateRandomPatternAutoCycle();
+	}
+
+	void UpdateTriangleAutoCycle()
+	{
+		bool is_stable = IsTriangleStable();
+
+		if (is_stable)
+		{
+			triangleStableTimer += Time.deltaTime;
+
+			if (!triangleSettledThisCycle && triangleStableTimer >= TriangleStableHoldDuration)
+			{
+				triangleSettledThisCycle = true;
+				if (DebugChoreography)
+				{
+					Debug.Log(
+						"[choreography] triangle settled | hold=" + triangleStableTimer.ToString("F2") +
+						" | avg_partner_dist=" + lastTriangleAverageDistanceToTarget.ToString("F3") +
+						" | max_partner_dist=" + lastTriangleMaxDistanceToTarget.ToString("F3") +
+						" | max_speed=" + lastTriangleMaxSpeed.ToString("F3")
+					);
+				}
+				EmitTriangleSettled();
+				StartRandomPattern();
+			}
+		}
+		else
+		{
+			triangleStableTimer = 0f;
+			triangleSettledThisCycle = false;
+		}
+	}
+
+	void UpdateRandomPatternAutoCycle()
+	{
 		if (CurrentState == ChoreographyState.Circle)
+		{
 			UpdateCircleState();
+			return;
+		}
+
+		activePatternTimer += Time.deltaTime;
+		if (activePatternTimer >= activePatternDuration)
+			ReturnToTriangleFromPattern();
+	}
+
+	bool IsTriangleStable()
+	{
+		lastTriangleUnstableReason = "";
+		lastTriangleAverageDistanceToTarget = 0f;
+		lastTriangleMaxDistanceToTarget = 0f;
+		lastTriangleAverageDistanceToAnchor = 0f;
+		lastTriangleMaxSpeed = 0f;
+
+		List<MirrorActor> actors = GetActiveActors();
+		if (actors.Count < 3)
+		{
+			lastTriangleUnstableReason = "not_enough_actors";
+			return false;
+		}
+
+		Vector3 anchor = GetResolvedAnchorPoint();
+		anchor.y = 0f;
+
+		Vector3 center = Vector3.zero;
+		float total_speed = 0f;
+		float max_speed = 0f;
+		float total_distance_to_anchor = 0f;
+
+		for (int i = 0; i < actors.Count; i++)
+		{
+			Vector3 actor_pos = actors[i].WorldPosition;
+			actor_pos.y = 0f;
+			center += actor_pos;
+
+			float speed = actors[i].PlanarVelocity.magnitude;
+			total_speed += speed;
+			if (speed > max_speed)
+				max_speed = speed;
+
+			total_distance_to_anchor += Vector3.Distance(actor_pos, anchor);
+		}
+
+		center /= actors.Count;
+
+		float center_distance_to_anchor = Vector3.Distance(center, anchor);
+		float average_speed = total_speed / actors.Count;
+		float average_distance_to_anchor = total_distance_to_anchor / actors.Count;
+
+		lastTriangleAverageDistanceToAnchor = average_distance_to_anchor;
+		lastTriangleMaxSpeed = max_speed;
+		lastTriangleAverageDistanceToTarget = 0f;
+		lastTriangleMaxDistanceToTarget = 0f;
+
+		float effective_center_tolerance = Mathf.Max(TriangleStableCenterDistanceTolerance, 1.0f);
+		if (center_distance_to_anchor > effective_center_tolerance)
+		{
+			lastTriangleUnstableReason = "center_to_anchor:" + center_distance_to_anchor.ToString("F3");
+			return false;
+		}
+
+		if (average_speed > TriangleStableAverageSpeedThreshold)
+		{
+			lastTriangleUnstableReason = "average_speed:" + average_speed.ToString("F3");
+			return false;
+		}
+
+		if (max_speed > TriangleStableSpeedThreshold)
+		{
+			lastTriangleUnstableReason = "max_speed:" + max_speed.ToString("F3");
+			return false;
+		}
+
+		EnsureTrianglePartners();
+
+		float total_partner_distance = 0f;
+		float max_partner_distance = 0f;
+
+		for (int i = 0; i < actors.Count; i++)
+		{
+			MirrorActor actor = actors[i];
+			if (!trianglePartners.TryGetValue(actor, out MirrorActor[] partners) || partners == null || partners.Length < 2)
+			{
+				lastTriangleUnstableReason = "partner_map_missing:" + actor.name;
+				return false;
+			}
+
+			MirrorActor partner_a = partners[0];
+			MirrorActor partner_b = partners[1];
+			if (partner_a == null || partner_b == null)
+			{
+				lastTriangleUnstableReason = "partner_null:" + actor.name;
+				return false;
+			}
+
+			Vector3 actor_pos = actor.WorldPosition;
+			actor_pos.y = 0f;
+
+			Vector3 partner_a_pos = partner_a.WorldPosition;
+			partner_a_pos.y = 0f;
+
+			Vector3 partner_b_pos = partner_b.WorldPosition;
+			partner_b_pos.y = 0f;
+
+			float distance_a = Vector3.Distance(actor_pos, partner_a_pos);
+			float distance_b = Vector3.Distance(actor_pos, partner_b_pos);
+
+			float local_partner_average = (distance_a + distance_b) * 0.5f;
+			float local_partner_deviation = Mathf.Abs(distance_a - distance_b);
+
+			total_partner_distance += local_partner_average;
+			if (local_partner_average > max_partner_distance)
+				max_partner_distance = local_partner_average;
+
+			if (local_partner_average > TriangleStablePartnerDistanceTolerance)
+			{
+				lastTriangleAverageDistanceToTarget = total_partner_distance / Mathf.Max(1, i + 1);
+				lastTriangleMaxDistanceToTarget = max_partner_distance;
+				lastTriangleUnstableReason = "partner_distance:" + actor.name + ":" + local_partner_average.ToString("F3");
+				return false;
+			}
+
+			if (local_partner_deviation > TriangleStablePartnerDistanceVarianceTolerance)
+			{
+				lastTriangleAverageDistanceToTarget = total_partner_distance / Mathf.Max(1, i + 1);
+				lastTriangleMaxDistanceToTarget = max_partner_distance;
+				lastTriangleUnstableReason = "partner_variance:" + actor.name + ":" + local_partner_deviation.ToString("F3");
+				return false;
+			}
+		}
+
+		lastTriangleAverageDistanceToTarget = total_partner_distance / actors.Count;
+		lastTriangleMaxDistanceToTarget = max_partner_distance;
+		lastTriangleUnstableReason = "stable";
+		return true;
+	}
+
+	void StartRandomPattern()
+	{
+		List<ChoreographyState> choices = BuildRandomPatternChoices();
+		if (choices.Count == 0)
+			return;
+
+		if (choices.Count > 1)
+			choices.Remove(lastRandomPattern);
+
+		if (choices.Count == 0)
+			choices = BuildRandomPatternChoices();
+
+		ChoreographyState next_pattern = choices[UnityEngine.Random.Range(0, choices.Count)];
+		activeRandomPattern = next_pattern;
+		lastRandomPattern = next_pattern;
+		activePatternTimer = 0f;
+		activePatternDuration = UnityEngine.Random.Range(PatternDurationMin, PatternDurationMax);
+
+		if (DebugChoreography)
+		{
+			Debug.Log(
+				"[choreography] pattern start | from=Triangle" +
+				" | to=" + next_pattern +
+				" | duration=" + activePatternDuration.ToString("F2") +
+				" | anchor=" + GetResolvedAnchorPoint().ToString("F2")
+			);
+		}
+
+		EmitPatternStarted(next_pattern);
+		SetState(next_pattern);
+	}
+	List<ChoreographyState> BuildRandomPatternChoices()
+	{
+		List<ChoreographyState> choices = new List<ChoreographyState>();
+
+		if (IncludeSpiral)
+			choices.Add(ChoreographyState.Spiral);
+		if (IncludeCircle)
+			choices.Add(ChoreographyState.Circle);
+		if (IncludeChaos)
+			choices.Add(ChoreographyState.Chaos);
+		if (IncludeScatter)
+			choices.Add(ChoreographyState.Scatter);
+		if (IncludeLine)
+			choices.Add(ChoreographyState.Line);
+
+		return choices;
+	}
+
+	void ReturnToTriangleFromPattern()
+	{
+		if (DebugChoreography)
+		{
+			Debug.Log(
+				"[choreography] pattern complete | state=" + activeRandomPattern +
+				" | elapsed=" + activePatternTimer.ToString("F2") +
+				" | returning=Triangle"
+			);
+		}
+
+		EmitPatternCompleted(activeRandomPattern);
+		RefreshTargets();
+		activeRandomPattern = ChoreographyState.Triangle;
+		activePatternTimer = 0f;
+		activePatternDuration = 0f;
+		triangleStableTimer = 0f;
+		triangleSettledThisCycle = false;
+		SetState(ChoreographyState.Triangle);
 	}
 
 	public void RefreshTargets()
 	{
 		if (CurrentState == ChoreographyState.Triangle)
-			AssignTrianglePartners();
-
+			RebuildTrianglePartners();
 		if (CurrentState == ChoreographyState.Circle)
 			ComputeCircleTargets();
 
@@ -136,18 +575,24 @@ public class ChoreographyManager : MonoBehaviour
 				"[choreography] refresh | state=" + CurrentState +
 				" | active=" + GetActiveActors().Count +
 				" | center=" + GetMirrorCenter().ToString("F2") +
-				" | anchor=" + GetResolvedAnchorPoint().ToString("F2")
+				" | anchor=" + GetResolvedAnchorPoint().ToString("F2") +
+				" | anchor_pull=" + AnchorPullStrength.ToString("F2")
 			);
 		}
 	}
 
 	public void SetState(ChoreographyState newState)
 	{
+		if (CurrentState == newState)
+			return;
+
+		EmitStateExited(CurrentState);
 		CurrentState = newState;
+		EmitStateEntered(CurrentState);
 
 		if (newState == ChoreographyState.Triangle)
 		{
-			AssignTrianglePartners();
+			RebuildTrianglePartners();
 			return;
 		}
 
@@ -160,6 +605,24 @@ public class ChoreographyManager : MonoBehaviour
 		if (newState == ChoreographyState.Spiral)
 		{
 			StartSpiral();
+			return;
+		}
+
+		if (newState == ChoreographyState.Chaos)
+		{
+			StartChaos();
+			return;
+		}
+
+		if (newState == ChoreographyState.Scatter)
+		{
+			StartScatter();
+			return;
+		}
+
+		if (newState == ChoreographyState.Line)
+		{
+			StartLine();
 			return;
 		}
 	}
@@ -176,17 +639,61 @@ public class ChoreographyManager : MonoBehaviour
 	{
 		List<MirrorActor> actors = GetActiveActors();
 		if (actors.Count == 0)
-			return actor.transform.position;
+			return actor.WorldPosition;
 
 		int index = actors.IndexOf(actor);
 		if (index < 0)
-			return actor.transform.position;
+			return actor.WorldPosition;
 
 		Vector3 anchorPoint = GetResolvedAnchorPoint();
 		Vector3 direction = LineDirection.normalized;
 		Vector3 start = anchorPoint - direction * ((actors.Count - 1) * 0.5f * LineSpacing);
 
 		return start + direction * (index * LineSpacing);
+	}
+
+	public Vector3 GetTriangleTargetFor(MirrorActor actor)
+	{
+		List<MirrorActor> actors = GetActiveActors();
+		if (actors.Count < 3)
+			return ApplyAnchorCoupling(actor.WorldPosition);
+
+		EnsureTrianglePartners();
+		if (!trianglePartners.TryGetValue(actor, out MirrorActor[] partners) || partners == null || partners.Length < 2)
+			return ApplyAnchorCoupling(actor.WorldPosition);
+
+		MirrorActor agent_a = partners[0];
+		MirrorActor agent_b = partners[1];
+		if (agent_a == null || agent_b == null)
+			return ApplyAnchorCoupling(actor.WorldPosition);
+
+		Vector3 current_position = actor.WorldPosition;
+		Vector3 anchor = GetResolvedAnchorPoint();
+		Vector3 a = agent_a.WorldPosition;
+		Vector3 b = agent_b.WorldPosition;
+		a.y = current_position.y;
+		b.y = current_position.y;
+		anchor.y = current_position.y;
+
+		Vector3 mid = (a + b) * 0.5f;
+		Vector3 axis = b - a;
+		if (axis.sqrMagnitude <= 0.0001f)
+			return ApplyAnchorCoupling(current_position);
+
+		Vector3 normal = new Vector3(-axis.z, 0f, axis.x).normalized;
+		float signed_distance = Vector3.Dot(current_position - mid, normal);
+		float target_distance = Mathf.Clamp(Mathf.Abs(signed_distance), TriangleMinDistance, TriangleMaxDistance);
+		if (target_distance <= 0.0001f)
+			target_distance = TriangleMinDistance;
+
+		Vector3 target_positive = mid + normal * target_distance;
+		Vector3 target_negative = mid - normal * target_distance;
+
+		float positive_anchor_distance = Vector3.Distance(target_positive, anchor);
+		float negative_anchor_distance = Vector3.Distance(target_negative, anchor);
+
+		Vector3 target = positive_anchor_distance <= negative_anchor_distance ? target_positive : target_negative;
+		return ApplyAnchorCoupling(target);
 	}
 
 	public Vector3 ApplyAnchorCoupling(Vector3 position)
@@ -211,16 +718,69 @@ public class ChoreographyManager : MonoBehaviour
 		position.z = Mathf.Lerp(position.z, anchorPoint.z, AnchorPullStrength * Time.deltaTime);
 		return position;
 	}
-
 	void StartSpiral()
 	{
-		intervalTimer = 0f;
-		spiralTimer = 0f;
 		CurrentState = ChoreographyState.Spiral;
-
+		activePatternTimer = 0f;
 		ComputeCenter();
+
 		if (DebugChoreography)
-			Debug.Log("[choreography] start spiral | center=" + Center.ToString("F2") + " | anchor=" + GetResolvedAnchorPoint().ToString("F2"));
+		{
+			Debug.Log(
+				"[choreography] start spiral | center=" + Center.ToString("F2") +
+				" | anchor=" + GetResolvedAnchorPoint().ToString("F2") +
+				" | spiral_strength=" + SpiralStrength.ToString("F2")
+			);
+		}
+	}
+	void StartChaos()
+	{
+		CurrentState = ChoreographyState.Chaos;
+		activePatternTimer = 0f;
+		ComputeCenter();
+
+		if (DebugChoreography)
+		{
+			Debug.Log(
+				"[choreography] start chaos | center=" + Center.ToString("F2") +
+				" | anchor=" + GetResolvedAnchorPoint().ToString("F2") +
+				" | chaos_strength=" + ChaosStrength.ToString("F2") +
+				" | orbit_strength=" + ChaosOrbitStrength.ToString("F2")
+			);
+		}
+	}
+
+	void StartScatter()
+	{
+		CurrentState = ChoreographyState.Scatter;
+		activePatternTimer = 0f;
+		ComputeCenter();
+
+		if (DebugChoreography)
+		{
+			Debug.Log(
+				"[choreography] start scatter | center=" + Center.ToString("F2") +
+				" | anchor=" + GetResolvedAnchorPoint().ToString("F2") +
+				" | scatter_strength=" + ScatterStrength.ToString("F2")
+			);
+		}
+	}
+
+	void StartLine()
+	{
+		CurrentState = ChoreographyState.Line;
+		activePatternTimer = 0f;
+		ComputeCenter();
+
+		if (DebugChoreography)
+		{
+			Debug.Log(
+				"[choreography] start line | center=" + Center.ToString("F2") +
+				" | anchor=" + GetResolvedAnchorPoint().ToString("F2") +
+				" | spacing=" + LineSpacing.ToString("F2") +
+				" | direction=" + LineDirection.ToString("F2")
+			);
+		}
 	}
 
 	void StartCircle()
@@ -229,6 +789,7 @@ public class ChoreographyManager : MonoBehaviour
 		CurrentCirclePhase = CirclePhase.Move;
 		circleHoldTimer = 0f;
 		circlePhaseTimer = 0f;
+		activePatternTimer = 0f;
 
 		ComputeCenter();
 		ComputeCircleTargets();
@@ -238,8 +799,7 @@ public class ChoreographyManager : MonoBehaviour
 
 	void StopCircle()
 	{
-		CurrentState = ChoreographyState.Triangle;
-		AssignTrianglePartners();
+		ReturnToTriangleFromPattern();
 		if (DebugChoreography)
 			Debug.Log("[choreography] stop circle -> triangle");
 	}
@@ -311,7 +871,7 @@ public class ChoreographyManager : MonoBehaviour
 		Vector3 center = Vector3.zero;
 
 		for (int i = 0; i < actors.Count; i++)
-			center += actors[i].transform.position;
+			center += actors[i].WorldPosition;
 
 		return center / actors.Count;
 	}
@@ -336,11 +896,11 @@ public class ChoreographyManager : MonoBehaviour
 			MirrorActor actor = actors[i];
 
 			Vector3 best = slots[0];
-			float bestDistance = Vector3.Distance(actor.transform.position, best);
+			float bestDistance = Vector3.Distance(actor.WorldPosition, best);
 
 			for (int j = 0; j < slots.Count; j++)
 			{
-				float distance = Vector3.Distance(actor.transform.position, slots[j]);
+				float distance = Vector3.Distance(actor.WorldPosition, slots[j]);
 				if (distance < bestDistance)
 				{
 					bestDistance = distance;
@@ -353,7 +913,7 @@ public class ChoreographyManager : MonoBehaviour
 			{
 				Debug.Log(
 					"[choreography] circle target | actor=" + actor.name +
-					" | pos=" + actor.transform.position.ToString("F2") +
+					" | pos=" + actor.WorldPosition.ToString("F2") +
 					" | target=" + best.ToString("F2") +
 					" | anchor=" + anchorPoint.ToString("F2")
 				);
@@ -389,44 +949,6 @@ public class ChoreographyManager : MonoBehaviour
 		return true;
 	}
 
-	void AssignTrianglePartners()
-	{
-		List<MirrorActor> actors = GetActiveActors();
-		if (actors.Count == 0)
-			return;
-
-		for (int i = 0; i < actors.Count; i++)
-		{
-			List<MirrorActor> others = new List<MirrorActor>(actors);
-			others.Remove(actors[i]);
-
-			if (others.Count < 2)
-			{
-				if (DebugPartners)
-					Debug.Log("[choreography] triangle partners | actor=" + actors[i].name + " | not enough partners");
-				actors[i].AgentA = null;
-				actors[i].AgentB = null;
-				continue;
-			}
-
-			MirrorActor a = others[Random.Range(0, others.Count)];
-			others.Remove(a);
-			MirrorActor b = others[Random.Range(0, others.Count)];
-
-			actors[i].AgentA = a.transform;
-			actors[i].AgentB = b.transform;
-			if (DebugPartners)
-			{
-				Debug.Log(
-					"[choreography] triangle partners | actor=" + actors[i].name +
-					" | A=" + a.name +
-					" | B=" + b.name +
-					" | anchor=" + GetResolvedAnchorPoint().ToString("F2")
-				);
-			}
-		}
-	}
-
 	void UpdateDebugLogging()
 	{
 		if (!DebugChoreography)
@@ -442,6 +964,11 @@ public class ChoreographyManager : MonoBehaviour
 		Vector3 anchor = GetResolvedAnchorPoint();
 		List<MirrorActor> actors = GetActiveActors();
 
+		float average_speed = 0f;
+		for (int i = 0; i < actors.Count; i++)
+			average_speed += actors[i].PlanarVelocity.magnitude;
+		average_speed = actors.Count > 0 ? average_speed / actors.Count : 0f;
+
 		Debug.Log(
 			"[choreography] tick | state=" + CurrentState +
 			" | phase=" + CurrentCirclePhase +
@@ -449,8 +976,15 @@ public class ChoreographyManager : MonoBehaviour
 			" | center=" + center.ToString("F2") +
 			" | anchor=" + anchor.ToString("F2") +
 			" | anchor_delta=" + (center - anchor).ToString("F2") +
-			" | circle_phase_timer=" + circlePhaseTimer.ToString("F2") +
-			" | circle_hold_timer=" + circleHoldTimer.ToString("F2")
+			" | triangle_stable_timer=" + triangleStableTimer.ToString("F2") +
+			" | avg_speed=" + average_speed.ToString("F3") +
+			" | avg_partner_dist=" + lastTriangleAverageDistanceToTarget.ToString("F3") +
+			" | max_partner_dist=" + lastTriangleMaxDistanceToTarget.ToString("F3") +
+			" | avg_anchor_dist=" + lastTriangleAverageDistanceToAnchor.ToString("F3") +
+			" | max_speed=" + lastTriangleMaxSpeed.ToString("F3") +
+			" | stable_reason=" + lastTriangleUnstableReason +
+			" | active_pattern_timer=" + activePatternTimer.ToString("F2") +
+			" | active_pattern_duration=" + activePatternDuration.ToString("F2")
 		);
 	}
 
@@ -462,17 +996,40 @@ public class ChoreographyManager : MonoBehaviour
 		for (int i = 0; i < actors.Count; i++)
 		{
 			MirrorActor actor = actors[i];
-			Vector3 toAnchor = anchor - actor.transform.position;
+			Vector3 toAnchor = anchor - actor.WorldPosition;
 			toAnchor.y = 0f;
 
 			Debug.Log(
 				"[choreography] actor | name=" + actor.name +
-				" | pos=" + actor.transform.position.ToString("F2") +
-				" | dist_to_anchor=" + toAnchor.magnitude.ToString("F2") +
-				" | A=" + (actor.AgentA != null ? actor.AgentA.name : "null") +
-				" | B=" + (actor.AgentB != null ? actor.AgentB.name : "null")
+				" | pos=" + actor.WorldPosition.ToString("F2") +
+				" | dist_to_anchor=" + toAnchor.magnitude.ToString("F2")
 			);
 		}
+	}
+
+	void EmitStateEntered(ChoreographyState state)
+	{
+		ChoreographyStateEntered?.Invoke(state);
+	}
+
+	void EmitStateExited(ChoreographyState state)
+	{
+		ChoreographyStateExited?.Invoke(state);
+	}
+
+	void EmitPatternStarted(ChoreographyState state)
+	{
+		ChoreographyPatternStarted?.Invoke(state);
+	}
+
+	void EmitPatternCompleted(ChoreographyState state)
+	{
+		ChoreographyPatternCompleted?.Invoke(state);
+	}
+
+	void EmitTriangleSettled()
+	{
+		TriangleSettled?.Invoke();
 	}
 
 	List<MirrorActor> GetActiveActors()
@@ -493,5 +1050,10 @@ public class ChoreographyManager : MonoBehaviour
 		}
 
 		return result;
+	}
+	void OnDisable()
+	{
+		trianglePartners.Clear();
+		ClearTriangleDebugLines();
 	}
 }
