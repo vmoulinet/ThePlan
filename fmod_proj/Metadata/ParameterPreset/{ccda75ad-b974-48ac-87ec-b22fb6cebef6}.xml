@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.03.00">
+	<object class="ParameterPreset" id="{ccda75ad-b974-48ac-87ec-b22fb6cebef6}">
+		<property name="name">
+			<value>glass_brush</value>
+		</property>
+		<relationship name="folder">
+			<destination>{de622172-3932-46b8-80cb-95cc0aa10138}</destination>
+		</relationship>
+		<relationship name="parameter">
+			<destination>{e87d43e5-44f9-4643-a7f9-a9fa75c94ed4}</destination>
+		</relationship>
+	</object>
+	<object class="GameParameter" id="{e87d43e5-44f9-4643-a7f9-a9fa75c94ed4}">
+		<property name="maximum">
+			<value>100</value>
+		</property>
+		<property name="initialValue">
+			<value>0</value>
+		</property>
+	</object>
+</objects>
