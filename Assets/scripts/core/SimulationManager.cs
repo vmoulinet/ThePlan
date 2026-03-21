@@ -9,7 +9,7 @@ public class SimulationManager : MonoBehaviour
 	public IOManager IOManager;
 	public EventManager EventManager;
 	public VideoManager VideoManager;
-
+	public SoundManager SoundManager;
 
 	void Awake()
 	{
@@ -70,6 +70,7 @@ public class SimulationManager : MonoBehaviour
 		MirrorManager.Initialize(this);
 		ChoreographyManager.Initialize(this);
 		WordManager.Initialize(this);
+		SoundManager.Initialize(this);
 
 
 		if (IOManager != null)

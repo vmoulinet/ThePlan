@@ -181,6 +181,11 @@ PrefabInstance:
       propertyPath: m_sharedMaterial
       value: 
       objectReference: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+    - target: {fileID: 6569262008447153960, guid: 1f0f308c175d2417cbebb822891b99d1,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
     - target: {fileID: 8225258193413382816, guid: 1f0f308c175d2417cbebb822891b99d1,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -1185,6 +1190,11 @@ PrefabInstance:
       propertyPath: m_sharedMaterial
       value: 
       objectReference: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+    - target: {fileID: 6569262008447153960, guid: 1f0f308c175d2417cbebb822891b99d1,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
     - target: {fileID: 8225258193413382816, guid: 1f0f308c175d2417cbebb822891b99d1,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -1535,6 +1545,7 @@ MonoBehaviour:
   root: {fileID: 966455153}
   amplitude: 24
   cable_length: 48.5
+  speed_multiplier: 1
   enable_cable: 1
   cable_material: {fileID: 0}
   cable_color: {r: 0, g: 0, b: 0, a: 1}
@@ -2394,6 +2405,84 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 1469302429392132594, guid: ade520aa997efda41a7719222e94278f, type: 3}
+--- !u!1 &633454977
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 633454978}
+  - component: {fileID: 633454979}
+  m_Layer: 0
+  m_Name: SoundManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &633454978
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 633454977}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1757729960}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &633454979
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 633454977}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b657c76d2f53468cb58f6b21e0771fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundManager
+  MirrorBreakEvent:
+    Guid:
+      Data1: 1220481391
+      Data2: 1193162979
+      Data3: -103190604
+      Data4: -353321416
+    Path: event:/glass_break
+  DebrisImpactEvent:
+    Guid:
+      Data1: 616351835
+      Data2: 1193566793
+      Data3: 518038417
+      Data4: -1290661526
+    Path: event:/glass_brush
+  DebrisLoopEvent:
+    Guid:
+      Data1: 616351835
+      Data2: 1193566793
+      Data3: 518038417
+      Data4: -1290661526
+    Path: event:/glass_brush
+  PendulumDroneEvent:
+    Guid:
+      Data1: 977442114
+      Data2: 1110307380
+      Data3: 619915708
+      Data4: -2053382999
+    Path: event:/pendule
+  DebrisAmountParameter: glass_brush
+  PendulumAmountParameter: pendulum swim
+  DebrisAmountMin: 0
+  DebrisAmountMax: 100
+  PendulumAmountMin: -19.7
+  PendulumAmountMax: 19.7
 --- !u!1 &645884743
 GameObject:
   m_ObjectHideFlags: 0
@@ -2432,6 +2521,7 @@ MonoBehaviour:
   DebrisRoot: {fileID: 1005230618}
   ChoreographyManager: {fileID: 1758520097}
   WordManager: {fileID: 1018003983}
+  SoundManager: {fileID: 633454979}
   StartingMirrorCount: 7
   SpawnInterval: 3
   RespawnDelay: 1
@@ -3752,6 +3842,11 @@ PrefabInstance:
       propertyPath: m_sharedMaterial
       value: 
       objectReference: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+    - target: {fileID: 6569262008447153960, guid: 1f0f308c175d2417cbebb822891b99d1,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
     - target: {fileID: 8225258193413382816, guid: 1f0f308c175d2417cbebb822891b99d1,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -4812,6 +4907,11 @@ PrefabInstance:
       propertyPath: m_sharedMaterial
       value: 
       objectReference: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+    - target: {fileID: 6569262008447153960, guid: 1f0f308c175d2417cbebb822891b99d1,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
     - target: {fileID: 8225258193413382816, guid: 1f0f308c175d2417cbebb822891b99d1,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -4947,6 +5047,11 @@ PrefabInstance:
     - target: {fileID: 6448781649004908983, guid: 1f0f308c175d2417cbebb822891b99d1,
         type: 3}
       propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+    - target: {fileID: 6569262008447153960, guid: 1f0f308c175d2417cbebb822891b99d1,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
     - target: {fileID: 8225258193413382816, guid: 1f0f308c175d2417cbebb822891b99d1,
@@ -5753,6 +5858,11 @@ PrefabInstance:
       propertyPath: m_sharedMaterial
       value: 
       objectReference: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+    - target: {fileID: 6569262008447153960, guid: 1f0f308c175d2417cbebb822891b99d1,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
     - target: {fileID: 8225258193413382816, guid: 1f0f308c175d2417cbebb822891b99d1,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -6070,6 +6180,7 @@ MonoBehaviour:
   IOManager: {fileID: 748073356}
   EventManager: {fileID: 794549095}
   VideoManager: {fileID: 313604262}
+  SoundManager: {fileID: 633454979}
 --- !u!4 &1757729960
 Transform:
   m_ObjectHideFlags: 0
@@ -6089,6 +6200,7 @@ Transform:
   - {fileID: 748073355}
   - {fileID: 794549094}
   - {fileID: 313604261}
+  - {fileID: 633454978}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1758520095
@@ -7734,6 +7846,11 @@ PrefabInstance:
     - target: {fileID: 6448781649004908983, guid: 1f0f308c175d2417cbebb822891b99d1,
         type: 3}
       propertyPath: m_sharedMaterial
+      value: 
+      objectReference: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+    - target: {fileID: 6569262008447153960, guid: 1f0f308c175d2417cbebb822891b99d1,
+        type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
     - target: {fileID: 8225258193413382816, guid: 1f0f308c175d2417cbebb822891b99d1,

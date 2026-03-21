@@ -12,6 +12,7 @@ public class MirrorManager : MonoBehaviour
 	public Transform DebrisRoot;
 	public ChoreographyManager ChoreographyManager;
 	public WordManager WordManager;
+	public SoundManager SoundManager;
 
 	[Header("Counts")]
 	public int StartingMirrorCount = 6;
@@ -47,9 +48,13 @@ public class MirrorManager : MonoBehaviour
 		if (WordManager == null)
 			WordManager = sim.WordManager;
 
+		if (SoundManager == null)
+			SoundManager = sim.SoundManager;
+
 		Debug.Log(
 			"[mirror_manager] initialize | choreography=" + (ChoreographyManager != null ? ChoreographyManager.name : "null") +
-			" | word_manager=" + (WordManager != null ? WordManager.name : "null")
+			" | word_manager=" + (WordManager != null ? WordManager.name : "null") +
+			" | sound_manager=" + (SoundManager != null ? SoundManager.name : "null")
 		);
 
 		CacheSpawnPoints();
@@ -146,6 +151,9 @@ public class MirrorManager : MonoBehaviour
 
 		if (mirror.CurrentSpawnPoint != null && mirror.CurrentSpawnPoint.CurrentMirror == mirror)
 			mirror.CurrentSpawnPoint.CurrentMirror = null;
+
+		if (SoundManager != null)
+			SoundManager.PlayMirrorBreak(impactPoint);
 
 		SpawnDebris(mirror, impactPoint);
 		StartCoroutine(RespawnMirrorRoutine(mirror));

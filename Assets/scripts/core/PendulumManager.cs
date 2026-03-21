@@ -15,6 +15,9 @@ public class PendulumManager : MonoBehaviour
 	[Tooltip("cable length in meters")]
 	public float cable_length = 48.5f;
 
+	[Header("Speed")]
+	public float speed_multiplier = 1f;
+
 	[Header("Cable Visual")]
 	public bool enable_cable = true;
 	public Material cable_material;
@@ -26,6 +29,7 @@ public class PendulumManager : MonoBehaviour
 	LineRenderer line_renderer;
 	Rigidbody body;
 	bool warned_missing_root = false;
+	SoundManager sound_manager;
 
 	float phase;
 	float omega;
@@ -40,6 +44,14 @@ public class PendulumManager : MonoBehaviour
 		}
 	}
 
+	public float CurrentSpeed
+	{
+		get
+		{
+			return current_world_velocity.magnitude;
+		}
+	}
+
 	void Awake()
 	{
 		line_renderer = GetComponent<LineRenderer>();
@@ -47,6 +59,10 @@ public class PendulumManager : MonoBehaviour
 
 		if (root == null && transform.parent != null)
 			root = transform.parent;
+
+		SimulationManager simulation_manager = FindFirstObjectByType<SimulationManager>();
+		if (simulation_manager != null)
+			sound_manager = simulation_manager.SoundManager;
 
 		body.useGravity = false;
 		body.isKinematic = true;
@@ -63,13 +79,16 @@ public class PendulumManager : MonoBehaviour
 
 	void Update()
 	{
-		phase += omega * Time.deltaTime;
+		phase += omega * Mathf.Max(0f, speed_multiplier) * Time.deltaTime;
 
 		float angle = Mathf.Sin(phase) * Mathf.Deg2Rad * amplitude;
 		float x = Mathf.Sin(angle) * cable_length;
 		float y = -Mathf.Cos(angle) * cable_length;
 
 		transform.localPosition = new Vector3(x, y, 0f);
+
+		if (sound_manager != null)
+			sound_manager.SetPendulumDroneAmountRaw(x);
 
 		Vector3 world_delta = transform.position - last_world_position;
 		current_world_velocity = world_delta / Mathf.Max(Time.deltaTime, 0.0001f);
@@ -116,6 +135,16 @@ public class PendulumManager : MonoBehaviour
 		warned_missing_root = false;
 		line_renderer.SetPosition(0, root.position);
 		line_renderer.SetPosition(1, transform.position);
+	}
+
+	public void SetSpeedMultiplier(float value)
+	{
+		speed_multiplier = Mathf.Max(0f, value);
+	}
+
+	public void AddSpeedMultiplier(float delta)
+	{
+		speed_multiplier = Mathf.Max(0f, speed_multiplier + delta);
 	}
 
 	public Vector3 GetImpactDirection()

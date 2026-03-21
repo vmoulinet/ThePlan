@@ -75,3 +75,6 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 .claude/worktrees/ecstatic-antonelli/
 Assets/Fonts/InstrumentSerif-Regular SDF.asset
+Assets/.DS_Store
+.DS_Store
+*/.DS_Store
