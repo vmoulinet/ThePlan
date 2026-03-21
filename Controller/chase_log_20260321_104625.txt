@@ -1,0 +1,19 @@
+[10:46:25.816] Monitor démarré
+[10:46:25.817] OSC server sur port 8000
+[10:46:25.831] Serial connecté sur COM9
+[10:46:26.092] Pong reçu du contrôleur
+[10:46:27.945] Pong reçu du contrôleur
+[10:46:29.879] Pong reçu du contrôleur
+[10:46:31.926] Pong reçu du contrôleur
+[10:46:33.872] Pong reçu du contrôleur
+[SERIAL] LED: flash vert (heartbeat) — wifi:OK serial:OK
+[10:46:35.920] Pong reçu du contrôleur
+[10:46:37.868] Pong reçu du contrôleur
+[10:46:39.915] Pong reçu du contrôleur
+[10:46:41.859] Pong reçu du contrôleur
+[10:46:43.907] Pong reçu du contrôleur
+[10:46:45.855] Pong reçu du contrôleur
+[10:46:47.902] Pong reçu du contrôleur
+[10:46:49.846] Pong reçu du contrôleur
+[10:46:51.900] Pong reçu du contrôleur
+[10:46:53.943] Pong reçu du contrôleur
