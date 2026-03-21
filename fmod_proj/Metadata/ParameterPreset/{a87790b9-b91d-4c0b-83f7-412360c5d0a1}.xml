@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.03.00">
+	<object class="ParameterPreset" id="{a87790b9-b91d-4c0b-83f7-412360c5d0a1}">
+		<property name="name">
+			<value>pendulum swim</value>
+		</property>
+		<relationship name="folder">
+			<destination>{de622172-3932-46b8-80cb-95cc0aa10138}</destination>
+		</relationship>
+		<relationship name="parameter">
+			<destination>{db1c8049-f376-4034-b712-b8436f515d62}</destination>
+		</relationship>
+	</object>
+	<object class="GameParameter" id="{db1c8049-f376-4034-b712-b8436f515d62}">
+		<property name="minimum">
+			<value>-19.699999999999999</value>
+		</property>
+		<property name="maximum">
+			<value>19.699999999999999</value>
+		</property>
+		<property name="initialValue">
+			<value>0</value>
+		</property>
+	</object>
+</objects>

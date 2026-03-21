@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<objects serializationModel="Studio.02.03.00">
+	<object class="AudioFile" id="{c53c67f3-fdf5-49a4-8118-1bd94f50f12a}">
+		<property name="assetPath">
+			<value>pendule_ambient_loop_1.wav</value>
+		</property>
+		<property name="isStreaming">
+			<value>true</value>
+		</property>
+		<property name="frequencyInKHz">
+			<value>44.0999985</value>
+		</property>
+		<property name="channelCount">
+			<value>2</value>
+		</property>
+		<property name="length">
+			<value>124</value>
+		</property>
+		<relationship name="masterAssetFolder">
+			<destination>{3cfc0a14-0510-459f-a2a8-706cc9aa258c}</destination>
+		</relationship>
+	</object>
+</objects>
