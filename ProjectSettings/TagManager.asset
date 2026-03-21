@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 3
   tags:
   - Pendulum
+  - Debris
   layers:
   - Default
   - TransparentFX

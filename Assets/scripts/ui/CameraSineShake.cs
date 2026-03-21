@@ -29,7 +29,7 @@ public class CameraSineShake : MonoBehaviour
 
 		if (shake_duration <= 0f)
 		{
-			original_local_position = CamTransform.localPosition;
+			CamTransform.localPosition = original_local_position;
 			return;
 		}
 

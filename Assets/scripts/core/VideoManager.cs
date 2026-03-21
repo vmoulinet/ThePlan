@@ -10,6 +10,8 @@ public class VideoManager : MonoBehaviour
 {
 	[Header("References")]
 	public VideoPlayer VideoPlayer;
+	public GameObject VideoVisualRoot;
+	public Renderer VideoRenderer;
 	public TMP_Text SubtitleText;
 	public CameraSineShake CameraShake;
 	public Transform DebrisFeedbackTarget;
@@ -24,6 +26,10 @@ public class VideoManager : MonoBehaviour
 	public bool LoopVideoPlayback = false;
 	public float VideoEventDuration = 10f;
 	public float SimulationTimeScaleDuringEvent = 0.35f;
+	public float TimeScaleFadeInDuration = 0.35f;
+	public float TimeScaleFadeOutDuration = 0.35f;
+	public float VideoFadeInDuration = 0.12f;
+	public float VideoFadeOutDuration = 0.12f;
 
 	[Header("Subtitles")]
 	public float CharactersPerSecond = 42f;
@@ -57,6 +63,11 @@ public class VideoManager : MonoBehaviour
 	Coroutine debris_feedback_routine = null;
 	Vector3 debris_feedback_base_local_position = Vector3.zero;
 	bool debris_feedback_base_cached = false;
+	Material video_material_instance = null;
+	bool video_has_color_property = false;
+	string video_color_property_name = "";
+	bool video_has_texture_property = false;
+	string video_texture_property_name = "";
 
 	public bool IsPlayingEvent { get; private set; } = false;
 	public string CurrentPreparedVideoPath { get; private set; } = "";
@@ -74,6 +85,8 @@ public class VideoManager : MonoBehaviour
 	void Awake()
 	{
 		Ensure_video_player();
+		Ensure_video_material_instance();
+		Set_video_visible(false);
 		Load_video_paths();
 		Load_sentences();
 
@@ -87,6 +100,122 @@ public class VideoManager : MonoBehaviour
 
 		if (PrepareOnAwake)
 			Prepare_current_video();
+	}
+
+	void Ensure_video_material_instance()
+	{
+		if (VideoRenderer == null)
+			return;
+
+		if (video_material_instance != null)
+			return;
+
+		video_material_instance = VideoRenderer.material;
+		if (video_material_instance == null)
+			return;
+
+		if (video_material_instance.HasProperty("_BaseColor"))
+		{
+			video_has_color_property = true;
+			video_color_property_name = "_BaseColor";
+		}
+		else if (video_material_instance.HasProperty("_Color"))
+		{
+			video_has_color_property = true;
+			video_color_property_name = "_Color";
+		}
+		if (video_material_instance.HasProperty("_BaseMap"))
+		{
+			video_has_texture_property = true;
+			video_texture_property_name = "_BaseMap";
+		}
+		else if (video_material_instance.HasProperty("_MainTex"))
+		{
+			video_has_texture_property = true;
+			video_texture_property_name = "_MainTex";
+		}
+	}
+
+	void Set_video_alpha(float alpha)
+	{
+		Ensure_video_material_instance();
+
+		if (!video_has_color_property || video_material_instance == null)
+			return;
+
+		Color color = video_material_instance.GetColor(video_color_property_name);
+		color.a = Mathf.Clamp01(alpha);
+		video_material_instance.SetColor(video_color_property_name, color);
+	}
+
+	void Clear_video_texture()
+	{
+		Ensure_video_material_instance();
+
+		if (!video_has_texture_property || video_material_instance == null)
+			return;
+
+		video_material_instance.SetTexture(video_texture_property_name, null);
+	}
+
+	IEnumerator Fade_video_alpha(float from_alpha, float to_alpha, float duration)
+	{
+		Ensure_video_material_instance();
+		Set_video_alpha(from_alpha);
+
+		if (duration <= 0f)
+		{
+			Set_video_alpha(to_alpha);
+			yield break;
+		}
+
+		float elapsed = 0f;
+		while (elapsed < duration)
+		{
+			elapsed += Time.unscaledDeltaTime;
+			float t = Mathf.Clamp01(elapsed / duration);
+			float eased = Mathf.SmoothStep(0f, 1f, t);
+			Set_video_alpha(Mathf.Lerp(from_alpha, to_alpha, eased));
+			yield return null;
+		}
+
+		Set_video_alpha(to_alpha);
+	}
+
+	IEnumerator Fade_time_scale(float from_scale, float to_scale, float duration)
+	{
+		if (duration <= 0f)
+		{
+			Time.timeScale = to_scale;
+			yield break;
+		}
+
+		float elapsed = 0f;
+		while (elapsed < duration)
+		{
+			elapsed += Time.unscaledDeltaTime;
+			float t = Mathf.Clamp01(elapsed / duration);
+			float eased = Mathf.SmoothStep(0f, 1f, t);
+			Time.timeScale = Mathf.Lerp(from_scale, to_scale, eased);
+			yield return null;
+		}
+
+		Time.timeScale = to_scale;
+	}
+
+	void Set_video_visible(bool visible)
+	{
+		if (VideoRenderer != null)
+			VideoRenderer.enabled = visible;
+
+		if (SubtitleText != null && SubtitleText.gameObject.activeSelf != visible)
+			SubtitleText.gameObject.SetActive(visible);
+
+		if (!visible)
+		{
+			Set_video_alpha(0f);
+			Clear_video_texture();
+		}
 	}
 
 	void Cache_debris_feedback_base_position()
@@ -105,8 +234,37 @@ public class VideoManager : MonoBehaviour
 			VideoPlayer = GetComponent<VideoPlayer>();
 			if (VideoPlayer == null)
 				VideoPlayer = gameObject.AddComponent<VideoPlayer>();
+		}
 
-			VideoPlayer.isLooping = LoopVideoPlayback;
+		VideoPlayer.playOnAwake = false;
+		VideoPlayer.waitForFirstFrame = true;
+		VideoPlayer.skipOnDrop = true;
+		VideoPlayer.isLooping = LoopVideoPlayback;
+		VideoPlayer.source = VideoSource.Url;
+
+		if (VideoRenderer == null)
+		{
+			if (VideoPlayer != null)
+			{
+				VideoRenderer = VideoPlayer.GetComponent<Renderer>();
+
+				if (VideoRenderer == null && VideoPlayer.targetMaterialRenderer != null)
+					VideoRenderer = VideoPlayer.targetMaterialRenderer;
+			}
+
+			if (VideoRenderer == null && VideoVisualRoot != null)
+				VideoRenderer = VideoVisualRoot.GetComponentInChildren<Renderer>(true);
+		}
+
+		Ensure_video_material_instance();
+	}
+	IEnumerator Wait_for_video_prepared(float timeout)
+	{
+		float elapsed = 0f;
+		while (VideoPlayer != null && !VideoPlayer.isPrepared && elapsed < timeout)
+		{
+			elapsed += Time.unscaledDeltaTime;
+			yield return null;
 		}
 	}
 
@@ -298,6 +456,9 @@ public class VideoManager : MonoBehaviour
 
 		prepared_video_index = index;
 		CurrentPreparedVideoPath = video_path;
+		VideoPlayer.Stop();
+		VideoPlayer.time = 0d;
+		Clear_video_texture();
 		VideoPlayer.url = video_path;
 		VideoPlayer.Prepare();
 
@@ -377,6 +538,7 @@ public class VideoManager : MonoBehaviour
 	IEnumerator Video_event_routine(int index)
 	{
 		IsPlayingEvent = true;
+		Set_video_visible(false);
 		Trigger_feedback_only();
 
 		if (SubtitleText != null)
@@ -389,21 +551,34 @@ public class VideoManager : MonoBehaviour
 			Prepare_video_at(index);
 
 		float prepare_timeout = 3f;
-		float prepare_elapsed = 0f;
+		yield return StartCoroutine(Wait_for_video_prepared(prepare_timeout));
 
-		while (VideoPlayer != null && !VideoPlayer.isPrepared && prepare_elapsed < prepare_timeout)
-		{
-			prepare_elapsed += Time.unscaledDeltaTime;
-			yield return null;
-		}
-
+		if (VideoPlayer != null)
+			VideoPlayer.time = 0d;
 		previous_time_scale = Time.timeScale;
-		Time.timeScale = SimulationTimeScaleDuringEvent;
+		yield return StartCoroutine(Fade_time_scale(previous_time_scale, SimulationTimeScaleDuringEvent, TimeScaleFadeInDuration));
 
 		if (VideoPlayer != null)
 		{
 			VideoPlayer.isLooping = LoopVideoPlayback;
+			Set_video_alpha(0f);
 			VideoPlayer.Play();
+
+			float first_frame_timeout = 1.0f;
+			float first_frame_elapsed = 0f;
+			while (first_frame_elapsed < first_frame_timeout)
+			{
+				if (VideoPlayer.frame >= 0)
+					break;
+
+				first_frame_elapsed += Time.unscaledDeltaTime;
+				yield return null;
+			}
+
+			yield return null;
+
+			Set_video_visible(true);
+			yield return StartCoroutine(Fade_video_alpha(0f, 1f, VideoFadeInDuration));
 		}
 
 		if (active_subtitle_routine != null)
@@ -418,8 +593,12 @@ public class VideoManager : MonoBehaviour
 			yield return null;
 		}
 
+		yield return StartCoroutine(Fade_video_alpha(1f, 0f, VideoFadeOutDuration));
+
 		if (VideoPlayer != null && VideoPlayer.isPlaying)
 			VideoPlayer.Stop();
+
+		Set_video_visible(false);
 
 		if (active_subtitle_routine != null)
 		{
@@ -432,8 +611,7 @@ public class VideoManager : MonoBehaviour
 			SubtitleText.text = "";
 			SubtitleText.maxVisibleCharacters = 0;
 		}
-
-		Time.timeScale = previous_time_scale;
+		yield return StartCoroutine(Fade_time_scale(Time.timeScale, previous_time_scale, TimeScaleFadeOutDuration));
 
 		// todo: when pendulum speed control exists, apply PendulumSpeedMultiplierAfterVideo here.
 		Debug.Log("[video_manager] event end | pendulum_speed_multiplier_after_video=" + PendulumSpeedMultiplierAfterVideo.ToString("F2"));
@@ -448,6 +626,7 @@ public class VideoManager : MonoBehaviour
 		current_video_index = index;
 		Prepare_next_video();
 
+		Set_video_visible(false);
 		IsPlayingEvent = false;
 		active_event_routine = null;
 	}
