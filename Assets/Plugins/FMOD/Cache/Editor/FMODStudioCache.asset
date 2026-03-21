@@ -42,10 +42,30 @@ MonoBehaviour:
   Path: Assets/BANKS/Desktop/Master.bank
   Name: Master
   StudioPath: bank:/Master
-  lastModified: 639091997312018323
+  lastModified: 639038357188449620
   FileSizes:
   - Name: Desktop
     Value: 44224
+  Exists: 1
+--- !u!114 &-597498247918958852
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c18180ecb35941f4682ae60107b85b7c, type: 3}
+  m_Name: bank:/pendule.bank
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorBankRef
+  Path: Assets/BANKS/Desktop/pendule.bank
+  Name: pendule
+  StudioPath: 
+  lastModified: 639096867027504750
+  FileSizes:
+  - Name: Desktop
+    Value: 3888672
   Exists: 1
 --- !u!114 &11400000
 MonoBehaviour:
@@ -62,6 +82,8 @@ MonoBehaviour:
   EditorBanks:
   - {fileID: 5482466835835480565}
   - {fileID: -4636400162633876970}
+  - {fileID: 2481432717894247601}
+  - {fileID: -597498247918958852}
   EditorEvents:
   - {fileID: -4659735356736607615}
   EditorParameters: []
@@ -69,8 +91,28 @@ MonoBehaviour:
   - {fileID: -4636400162633876970}
   StringsBanks:
   - {fileID: 5482466835835480565}
-  cacheTime: 639091997312019182
+  cacheTime: 0
   cacheVersion: 131634
+--- !u!114 &2481432717894247601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c18180ecb35941f4682ae60107b85b7c, type: 3}
+  m_Name: bank:/glass.bank
+  m_EditorClassIdentifier: FMODUnityEditor::FMODUnity.EditorBankRef
+  Path: Assets/BANKS/Desktop/glass.bank
+  Name: glass
+  StudioPath: 
+  lastModified: 639096867026780117
+  FileSizes:
+  - Name: Desktop
+    Value: 476096
+  Exists: 1
 --- !u!114 &5482466835835480565
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -86,7 +128,7 @@ MonoBehaviour:
   Path: Assets/BANKS/Desktop/Master.strings.bank
   Name: Master.strings
   StudioPath: bank:/Master.strings
-  lastModified: 639091997312019182
+  lastModified: 639038357188461777
   FileSizes:
   - Name: Desktop
     Value: 804

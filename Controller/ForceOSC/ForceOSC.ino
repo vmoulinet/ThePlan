@@ -144,11 +144,9 @@ bool  readScale1 = true;
 
 unsigned long lastSendTime  = 0;
 unsigned long lastStompTime = 0;
-unsigned long lastOscForce  = 0;
 unsigned long lastHeartbeat = 0;
 unsigned long lastBatCheck  = 0;
-const unsigned long OSC_FORCE_INTERVAL_MS = 50;
-const unsigned long HEARTBEAT_MS          = 10000;
+const unsigned long HEARTBEAT_MS = 10000;
 const unsigned long BAT_CHECK_MS          = 30000;
 
 float prevRaw     = 0.0f;
@@ -185,6 +183,7 @@ void checkIncoming() {
   if (!msg.hasError() && msg.fullMatch("/ping")) {
     unityIP = udp.remoteIP();
     OSCMessage pong("/pong");
+    pong.add((float)WiFi.RSSI());
     udp.beginPacket(unityIP, OSC_OUT_PORT);
     pong.send(udp);
     udp.endPacket();
@@ -375,11 +374,6 @@ void loop() {
     Serial.println("kg");
     sendOSC("/stomp", stompValue);
     ledFlash(COL_YELLOW, 120);
-  }
-
-  if (now - lastOscForce >= OSC_FORCE_INTERVAL_MS) {
-    lastOscForce = now;
-    sendOSC("/force", med);
   }
 
   prevOther = rawThis;
