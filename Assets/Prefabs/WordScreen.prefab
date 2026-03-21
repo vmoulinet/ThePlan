@@ -121,7 +121,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 1990014241562218526, guid: 771a48b8064604fa0b192c2130f387b4, type: 2}
+  - {fileID: -5959095759195725424, guid: 771a48b8064604fa0b192c2130f387b4, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -168,7 +168,7 @@ MonoBehaviour:
   m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 771a48b8064604fa0b192c2130f387b4, type: 2}
-  m_sharedMaterial: {fileID: 1990014241562218526, guid: 771a48b8064604fa0b192c2130f387b4,
+  m_sharedMaterial: {fileID: -5959095759195725424, guid: 771a48b8064604fa0b192c2130f387b4,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
@@ -268,7 +268,7 @@ RectTransform:
   m_GameObject: {fileID: 5056457567858333964}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -2}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 1, y: 2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 8274121219186897666}
@@ -303,7 +303,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 1990014241562218526, guid: 771a48b8064604fa0b192c2130f387b4, type: 2}
+  - {fileID: -5959095759195725424, guid: 771a48b8064604fa0b192c2130f387b4, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -350,7 +350,7 @@ MonoBehaviour:
   m_text: STOMP
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 771a48b8064604fa0b192c2130f387b4, type: 2}
-  m_sharedMaterial: {fileID: 1990014241562218526, guid: 771a48b8064604fa0b192c2130f387b4,
+  m_sharedMaterial: {fileID: -5959095759195725424, guid: 771a48b8064604fa0b192c2130f387b4,
     type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
