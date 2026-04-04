@@ -4374,7 +4374,7 @@ RectTransform:
   m_GameObject: {fileID: 1007122702}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 6.5}
-  m_LocalScale: {x: 0.93, y: 0.93, z: 0.93}
+  m_LocalScale: {x: 0.75, y: 0.75, z: 0.75}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
@@ -4406,7 +4406,9 @@ MonoBehaviour:
   DotSize: 0.006
   DotColorActive: {r: 1, g: 1, b: 1, a: 1}
   DotColorBroken: {r: 1, g: 0, b: 0, a: 1}
+  DotColorStable: {r: 0, g: 0, b: 1, a: 1}
   LineColor: {r: 1, g: 1, b: 1, a: 0.4}
+  LineColorStable: {r: 0, g: 0.4, b: 1, a: 0.8}
   LineWidth: 0.001
 --- !u!1 &1018003982
 GameObject:
@@ -6027,6 +6029,12 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!4 &1504489928 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 0cef7f9423a50374c80c052829ead585,
+    type: 3}
+  m_PrefabInstance: {fileID: 1504489925}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1609846549
 GameObject:
   m_ObjectHideFlags: 0
@@ -6912,6 +6920,8 @@ MonoBehaviour:
   LineSpacing: 0.5
   LineDirection: {x: 1, y: 0, z: 0}
   Center: {x: 0.54324585, y: -0.038216285, z: -1.0917274}
+  DaddyTransform: {fileID: 1504489928}
+  DaddyGazeHoldDuration: 4
   CurrentCirclePhase: 2
 --- !u!1 &1823688464
 GameObject:

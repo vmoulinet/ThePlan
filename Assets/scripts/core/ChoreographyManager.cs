@@ -43,6 +43,9 @@ public class ChoreographyManager : MonoBehaviour
 	public float TriangleStableCenterDistanceTolerance = 0.75f;
 	public float TriangleStablePartnerDistanceTolerance = 2.5f;
 	public float TriangleStablePartnerDistanceVarianceTolerance = 2.0f;
+	public float PendulumExclusionHalfWidth = 0.1f;
+	public Transform DaddyTransform;
+	public float DaddyGazeHoldDuration = 2f;
 
 	[Header("Anchor Coupling")]
 	public float AnchorPullStrength = 0.35f;
@@ -110,6 +113,8 @@ public class ChoreographyManager : MonoBehaviour
 	float lastTriangleAverageDistanceToAnchor = 0f;
 	float lastTriangleMaxSpeed = 0f;
 	bool triangleSettledThisCycle;
+	float daddyGazeTimer = 0f;
+	bool daddyGazeActive = false;
 	ChoreographyState activeRandomPattern = ChoreographyState.Triangle;
 	ChoreographyState lastRandomPattern = ChoreographyState.Triangle;
 	readonly List<LineRenderer> debugTriangleLines = new List<LineRenderer>();
@@ -297,6 +302,17 @@ public class ChoreographyManager : MonoBehaviour
 	{
 		bool is_stable = IsTriangleStable();
 
+		if (daddyGazeActive)
+		{
+			daddyGazeTimer += Time.deltaTime;
+			if (daddyGazeTimer >= DaddyGazeHoldDuration)
+			{
+				daddyGazeActive = false;
+				StartRandomPattern();
+			}
+			return;
+		}
+
 		if (is_stable)
 		{
 			triangleStableTimer += Time.deltaTime;
@@ -314,7 +330,8 @@ public class ChoreographyManager : MonoBehaviour
 					);
 				}
 				EmitTriangleSettled();
-				StartRandomPattern();
+				daddyGazeActive = true;
+				daddyGazeTimer = 0f;
 			}
 		}
 		else
@@ -413,6 +430,7 @@ if (average_speed > TriangleStableAverageSpeedThreshold)
 		if (choices.Count == 0)
 			choices = BuildRandomPatternChoices();
 
+		ClearAllMirrorFacingOverrides();
 		ChoreographyState next_pattern = choices[UnityEngine.Random.Range(0, choices.Count)];
 		activeRandomPattern = next_pattern;
 		lastRandomPattern = next_pattern;
@@ -461,6 +479,7 @@ if (average_speed > TriangleStableAverageSpeedThreshold)
 			);
 		}
 
+		ClearAllMirrorFacingOverrides();
 		EmitPatternCompleted(activeRandomPattern);
 		RefreshTargets();
 		activeRandomPattern = ChoreographyState.Triangle;
@@ -468,6 +487,8 @@ if (average_speed > TriangleStableAverageSpeedThreshold)
 		activePatternDuration = 0f;
 		triangleStableTimer = 0f;
 		triangleSettledThisCycle = false;
+		daddyGazeActive = false;
+		daddyGazeTimer = 0f;
 		SetState(ChoreographyState.Triangle);
 	}
 
@@ -644,7 +665,26 @@ if (average_speed > TriangleStableAverageSpeedThreshold)
 		else
 			target = signed_distance >= 0f ? target_positive : target_negative;
 
+		target = PushOutOfPendulumZone(target, current_position);
 		return ApplyAnchorCoupling(target);
+	}
+
+	Vector3 PushOutOfPendulumZone(Vector3 target, Vector3 current_position)
+	{
+		if (PendulumExclusionHalfWidth <= 0f)
+			return target;
+
+		if (Mathf.Abs(target.z) >= PendulumExclusionHalfWidth)
+			return target;
+
+		// La cible est dans la zone interdite — pousse vers le côté où se trouve le miroir
+		float mirror_z = current_position.z;
+		if (mirror_z >= 0f)
+			target.z = PendulumExclusionHalfWidth;
+		else
+			target.z = -PendulumExclusionHalfWidth;
+
+		return target;
 	}
 
 	public Vector3 ApplyAnchorCoupling(Vector3 position)
@@ -981,6 +1021,42 @@ if (average_speed > TriangleStableAverageSpeedThreshold)
 	void EmitTriangleSettled()
 	{
 		TriangleSettled?.Invoke();
+		FaceAllMirrorsToDaddy();
+	}
+
+	void FaceAllMirrorsToDaddy()
+	{
+		if (MirrorManager == null)
+			return;
+
+		List<MirrorActor> actors = MirrorManager.ActiveMirrors;
+		for (int i = 0; i < actors.Count; i++)
+		{
+			MirrorActor mirror = actors[i];
+			if (mirror == null || mirror.IsBroken)
+				continue;
+
+			Vector3 daddy_pos = DaddyTransform != null ? DaddyTransform.position : Vector3.zero;
+			Vector3 to_daddy = daddy_pos - mirror.WorldPosition;
+			to_daddy.y = 0f;
+			if (to_daddy.sqrMagnitude < 0.0001f)
+				continue;
+
+			mirror.SetFacingOverride(-to_daddy.normalized);
+		}
+	}
+
+	void ClearAllMirrorFacingOverrides()
+	{
+		if (MirrorManager == null)
+			return;
+
+		List<MirrorActor> actors = MirrorManager.ActiveMirrors;
+		for (int i = 0; i < actors.Count; i++)
+		{
+			if (actors[i] != null)
+				actors[i].ClearFacingOverride();
+		}
 	}
 
 	List<MirrorActor> GetActiveActors()

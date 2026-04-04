@@ -66,6 +66,8 @@ public class MirrorActor : MonoBehaviour
 	Vector3 last_break_impact_direction = Vector3.zero;
 	float last_break_impact_speed = 0f;
 	bool is_broken = false;
+	bool facing_override_active = false;
+	Vector3 facing_override_direction = Vector3.forward;
 	float panel_x_target = 0f;
 	float panel_x_current = 0f;
 	Quaternion panel_base_local_rotation = Quaternion.identity;
@@ -233,7 +235,7 @@ public class MirrorActor : MonoBehaviour
 		rb.mass = Mathf.Max(0.01f, Mass);
 		rb.useGravity = UseGravity;
 
-		Vector3 desired_planar_velocity = ComputeDesiredPlanarVelocity();
+		Vector3 desired_planar_velocity = facing_override_active ? Vector3.zero : ComputeDesiredPlanarVelocity();
 		desired_planar_velocity = ApplyObstacleAvoidance(desired_planar_velocity);
 
 		smoothed_desired_planar_velocity = Vector3.Lerp(
@@ -555,18 +557,41 @@ public class MirrorActor : MonoBehaviour
 		}
 	}
 
+	public void SetFacingOverride(Vector3 world_direction)
+	{
+		world_direction.y = 0f;
+		if (world_direction.sqrMagnitude < 0.0001f)
+			return;
+		facing_override_active = true;
+		facing_override_direction = world_direction.normalized;
+	}
+
+	public void ClearFacingOverride()
+	{
+		facing_override_active = false;
+	}
+
 	void UpdateBodyRotation()
 	{
 		if (rb == null)
 			return;
 
-		Vector3 target_direction = PlanarVelocity;
-		if (target_direction.sqrMagnitude < MinRotationSpeed * MinRotationSpeed)
-			target_direction = last_desired_planar_velocity;
+		Vector3 target_direction;
 
-		target_direction.y = 0f;
-		if (target_direction.sqrMagnitude < 0.0001f)
-			return;
+		if (facing_override_active)
+		{
+			target_direction = facing_override_direction;
+		}
+		else
+		{
+			target_direction = PlanarVelocity;
+			if (target_direction.sqrMagnitude < MinRotationSpeed * MinRotationSpeed)
+				target_direction = last_desired_planar_velocity;
+
+			target_direction.y = 0f;
+			if (target_direction.sqrMagnitude < 0.0001f)
+				return;
+		}
 
 		target_direction.Normalize();
 		smoothed_facing_direction = Vector3.Slerp(
