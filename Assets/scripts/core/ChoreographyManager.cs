@@ -414,6 +414,19 @@ if (average_speed > TriangleStableAverageSpeedThreshold)
 			return false;
 		}
 
+		if (PendulumExclusionHalfWidth > 0f)
+		{
+			for (int i = 0; i < actors.Count; i++)
+			{
+				float z = actors[i].WorldPosition.z;
+				if (Mathf.Abs(z) < PendulumExclusionHalfWidth)
+				{
+					lastTriangleUnstableReason = "pendulum_zone:" + actors[i].name + ":z=" + z.ToString("F3");
+					return false;
+				}
+			}
+		}
+
 		lastTriangleUnstableReason = "stable";
 		return true;
 	}

@@ -2381,6 +2381,21 @@ PrefabInstance:
       propertyPath: m_Name
       value: Props
       objectReference: {fileID: 0}
+    - target: {fileID: 1007963944340528824, guid: ade520aa997efda41a7719222e94278f,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 96.543304
+      objectReference: {fileID: 0}
+    - target: {fileID: 1007963944340528824, guid: ade520aa997efda41a7719222e94278f,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.014
+      objectReference: {fileID: 0}
+    - target: {fileID: 1007963944340528824, guid: ade520aa997efda41a7719222e94278f,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.00000083447
+      objectReference: {fileID: 0}
     - target: {fileID: 1992582096188363536, guid: ade520aa997efda41a7719222e94278f,
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -6896,9 +6911,12 @@ MonoBehaviour:
   TriangleStableCenterDistanceTolerance: 0.75
   TriangleStablePartnerDistanceTolerance: 5.5
   TriangleStablePartnerDistanceVarianceTolerance: 2
+  PendulumExclusionHalfWidth: 0.4
+  DaddyTransform: {fileID: 1504489928}
+  DaddyGazeHoldDuration: 4
   AnchorPullStrength: 0
   AnchorOuterLimit: 6.7
-  AnchorOuterPullStrength: 20
+  AnchorOuterPullStrength: 30.5
   PatternDurationMin: 8
   PatternDurationMax: 16
   IncludeSpiral: 1
@@ -6920,8 +6938,6 @@ MonoBehaviour:
   LineSpacing: 0.5
   LineDirection: {x: 1, y: 0, z: 0}
   Center: {x: 0.54324585, y: -0.038216285, z: -1.0917274}
-  DaddyTransform: {fileID: 1504489928}
-  DaddyGazeHoldDuration: 4
   CurrentCirclePhase: 2
 --- !u!1 &1823688464
 GameObject:
