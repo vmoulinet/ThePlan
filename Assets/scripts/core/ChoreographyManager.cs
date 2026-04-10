@@ -220,15 +220,52 @@ public class ChoreographyManager : MonoBehaviour
 		if (actors.Count < 3)
 			return;
 
+		HashSet<long> used_pairs = new HashSet<long>();
+
 		for (int i = 0; i < actors.Count; i++)
 		{
 			MirrorActor actor = actors[i];
 			List<MirrorActor> others = new List<MirrorActor>(actors);
 			others.Remove(actor);
 
-			MirrorActor partner_a = others[UnityEngine.Random.Range(0, others.Count)];
-			others.Remove(partner_a);
-			MirrorActor partner_b = others[UnityEngine.Random.Range(0, others.Count)];
+			MirrorActor partner_a = null;
+			MirrorActor partner_b = null;
+
+			// Shuffle others pour randomiser
+			for (int s = others.Count - 1; s > 0; s--)
+			{
+				int r = UnityEngine.Random.Range(0, s + 1);
+				MirrorActor tmp = others[s];
+				others[s] = others[r];
+				others[r] = tmp;
+			}
+
+			for (int a = 0; a < others.Count - 1 && partner_a == null; a++)
+			{
+				for (int b = a + 1; b < others.Count; b++)
+				{
+					int id_a = others[a].GetInstanceID();
+					int id_b = others[b].GetInstanceID();
+					long pair_key = id_a < id_b
+						? ((long)id_a << 32) | (uint)id_b
+						: ((long)id_b << 32) | (uint)id_a;
+
+					if (used_pairs.Contains(pair_key))
+						continue;
+
+					partner_a = others[a];
+					partner_b = others[b];
+					used_pairs.Add(pair_key);
+					break;
+				}
+			}
+
+			// Fallback si toutes les paires sont prises
+			if (partner_a == null)
+			{
+				partner_a = others[0];
+				partner_b = others[1];
+			}
 
 			trianglePartners[actor] = new MirrorActor[] { partner_a, partner_b };
 
@@ -692,7 +729,9 @@ if (average_speed > TriangleStableAverageSpeedThreshold)
 		float dist_to_anchor = Vector3.Distance(flat_pos, anchor);
 
 		int side;
-		if (triangleSide.TryGetValue(actor, out int cached_side))
+		bool has_cached = triangleSide.TryGetValue(actor, out int cached_side);
+
+		if (has_cached && mirrorsAtPosition.Contains(actor))
 		{
 			side = cached_side;
 		}
@@ -707,10 +746,19 @@ if (average_speed > TriangleStableAverageSpeedThreshold)
 		}
 
 		Vector3 target = side > 0 ? target_positive : target_negative;
-
 		target = PushOutOfPendulumZone(target, current_position);
-		target = ClampToStageBounds(target);
-		return ApplyAnchorCoupling(target);
+		Vector3 clamped = ClampToStageBounds(target);
+
+		if (Vector3.Distance(clamped, target) > TriangleStableDistanceTolerance)
+		{
+			side = -side;
+			triangleSide[actor] = side;
+			target = side > 0 ? target_positive : target_negative;
+			target = PushOutOfPendulumZone(target, current_position);
+			clamped = ClampToStageBounds(target);
+		}
+
+		return ApplyAnchorCoupling(clamped);
 	}
 
 	static readonly Vector2[] stageBounds = new Vector2[]

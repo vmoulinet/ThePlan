@@ -167,19 +167,14 @@ public class TopDownMirrorCanvas : MonoBehaviour
 
 				if (!drawn_pairs.Add(pair_key)) continue;
 
-				bool partner_stable = ChoreographyManager.IsMirrorAtTrianglePosition(partner);
-
 				Vector2 pos_a = WorldToCanvas(mirror.WorldPosition);
 				Vector2 pos_b = WorldToCanvas(partner.WorldPosition);
 				Vector2 mid = (pos_a + pos_b) * 0.5f;
 
-				Color color_a = mirror_stable ? LineColorStable : LineColor;
-				Color color_b = partner_stable ? LineColorStable : LineColor;
+				Color line_color = mirror_stable ? LineColorStable : LineColor;
 
-				// Demi-ligne côté mirror (pos_a → mid)
-				DrawHalfLine(pos_a, mid, color_a);
-				// Demi-ligne côté partner (pos_b → mid)
-				DrawHalfLine(pos_b, mid, color_b);
+				DrawHalfLine(pos_a, mid, line_color);
+				DrawHalfLine(pos_b, mid, line_color);
 			}
 		}
 

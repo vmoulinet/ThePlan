@@ -2556,6 +2556,8 @@ MonoBehaviour:
   DebrisMaxBonusForce: 3
   DebrisDirectionalBackshift: 1.2
   DebrisDirectionalRadiusBonus: 2
+  BreakBoostMultiplier: 2
+  BreakBoostDuration: 2
   EnableDebugBreakAll: 1
   BreakAllKey: 114
 --- !u!4 &645884745
@@ -6680,7 +6682,7 @@ Transform:
   m_GameObject: {fileID: 1711083962}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 4.19993, z: -7.53247}
+  m_LocalPosition: {x: -0.2, y: 4.19993, z: -7.34}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7067,18 +7069,18 @@ MonoBehaviour:
   DebugTriangleLineMaterial: {fileID: 0}
   DebugTriangleLineWidth: 0.03
   DebugTriangleLineHeight: 0.15
-  TriangleMinDistance: 3.3
-  TriangleMaxDistance: 23.19
-  ToleranceRadius: 0.58
-  TriangleStableDistanceTolerance: 1.77
-  TriangleStableDistanceHysteresis: 0.6
+  TriangleMinDistance: 5.2
+  TriangleMaxDistance: 17
+  ToleranceRadius: 1.71
+  TriangleStableDistanceTolerance: 2.51
+  TriangleStableDistanceHysteresis: 3.72
   TriangleStableSpeedThreshold: 0.79
   TriangleStableHoldDuration: 1.2
   TriangleStableAverageSpeedThreshold: 0.77
   TriangleStableCenterDistanceTolerance: 0.75
   PendulumExclusionHalfWidth: 0.4
   DaddyTransform: {fileID: 1504489928}
-  DaddyGazeHoldDuration: 4
+  DaddyGazeHoldDuration: 9
   AnchorPullStrength: 0
   AnchorOuterLimit: 6.7
   AnchorOuterPullStrength: 30.5
@@ -7102,7 +7104,7 @@ MonoBehaviour:
   ScatterStrength: 4
   LineSpacing: 0.5
   LineDirection: {x: 1, y: 0, z: 0}
-  Center: {x: 0.54324585, y: -0.038216285, z: -1.0917274}
+  Center: {x: 0.7838356, y: -0.03060375, z: -0.9370943}
   CurrentCirclePhase: 2
 --- !u!1 &1823688464
 GameObject:
@@ -7738,7 +7740,7 @@ Transform:
   m_GameObject: {fileID: 1931337002}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.05, z: -1.05}
+  m_LocalPosition: {x: 0, y: 0.05, z: -0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

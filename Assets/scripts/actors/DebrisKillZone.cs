@@ -8,12 +8,20 @@ public class DebrisKillZone : MonoBehaviour
 	void OnTriggerEnter(Collider other)
 	{
 		MirrorDebris debris = other.GetComponentInParent<MirrorDebris>();
-		if (debris == null)
+		if (debris != null)
+		{
+			if (DebugLog)
+				Debug.Log("[kill_zone] destroying debris " + debris.name);
+			Destroy(debris.gameObject);
 			return;
+		}
 
-		if (DebugLog)
-			Debug.Log("[debris_kill_zone] destroying " + debris.name);
-
-		Destroy(debris.gameObject);
+		MirrorActor mirror = other.GetComponentInParent<MirrorActor>();
+		if (mirror != null && !mirror.IsBroken)
+		{
+			if (DebugLog)
+				Debug.Log("[kill_zone] force breaking mirror " + mirror.name);
+			mirror.ForceBreak();
+		}
 	}
 }

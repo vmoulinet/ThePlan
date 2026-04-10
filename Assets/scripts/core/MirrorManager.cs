@@ -60,6 +60,10 @@ public class MirrorManager : MonoBehaviour
 		CacheSpawnPoints();
 	}
 
+	[Header("Break Boost")]
+	public float BreakBoostMultiplier = 2f;
+	public float BreakBoostDuration = 2f;
+
 	[Header("Debug")]
 	public bool EnableDebugBreakAll = true;
 	public KeyCode BreakAllKey = KeyCode.R;
@@ -68,6 +72,18 @@ public class MirrorManager : MonoBehaviour
 	{
 		if (EnableDebugBreakAll && Input.GetKeyDown(BreakAllKey))
 			BreakAllMirrors();
+	}
+
+	void ApplyBreakBoostToAll(MirrorActor brokenMirror)
+	{
+		for (int i = 0; i < ActiveMirrors.Count; i++)
+		{
+			MirrorActor mirror = ActiveMirrors[i];
+			if (mirror == null || mirror == brokenMirror || mirror.IsBroken)
+				continue;
+
+			mirror.ApplySpeedBoost(BreakBoostMultiplier, BreakBoostDuration);
+		}
 	}
 
 	public void BreakAllMirrors()
@@ -176,6 +192,7 @@ public class MirrorManager : MonoBehaviour
 			SoundManager.PlayMirrorBreak(impactPoint);
 
 		SpawnDebris(mirror, impactPoint);
+		ApplyBreakBoostToAll(mirror);
 		StartCoroutine(RespawnMirrorRoutine(mirror));
 
 		if (WordManager != null)

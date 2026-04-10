@@ -110,13 +110,15 @@ MonoBehaviour:
   NoiseStrength: 0.1
   NoiseFrequency: 1
   UseGravity: 1
-  Downforce: 0.1
+  Downforce: 0.61
   GroundStickVelocity: -0.5
   PanelXAngle: 0
   PanelXSpeed: 180
   PanelSpin: 0
   PanelSpinSpeed: 360
+  PanelXVelocityTilt: 25
   PendulumTag: Pendulum
+  BreakBoostHopForce: 1.78
   DebugDraw: 0
   DebugPanel: 0
   CircleTarget: {x: 0, y: 0, z: 0}

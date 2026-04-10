@@ -52,9 +52,12 @@ public class MirrorActor : MonoBehaviour
 	public float PanelXSpeed = 180f;
 	public bool PanelSpin = false;
 	public float PanelSpinSpeed = 360f;
+	public float PanelXVelocityTilt = 25f;
 
 	[Header("Break")]
 	public string PendulumTag = "Pendulum";
+	public float BreakBoostHopForce = 2f;
+	public float BreakBoostHopGravity = 15f;
 
 	[Header("Debug")]
 	public bool DebugDraw = true;
@@ -78,6 +81,10 @@ public class MirrorActor : MonoBehaviour
 	Vector3 smoothed_facing_direction = Vector3.forward;
 	Collider[] debris_push_hits = new Collider[12];
 	Collider[] own_colliders;
+	float speed_boost_multiplier = 1f;
+	float speed_boost_timer = 0f;
+	float speed_boost_duration = 0f;
+	bool is_hopping = false;
 
 	public bool IsBroken
 	{
@@ -234,6 +241,16 @@ public class MirrorActor : MonoBehaviour
 
 		rb.mass = Mathf.Max(0.01f, Mass);
 		rb.useGravity = UseGravity;
+
+		if (speed_boost_timer > 0f)
+		{
+			speed_boost_timer -= Time.fixedDeltaTime;
+			speed_boost_multiplier = 1f + (speed_boost_multiplier - 1f) * Mathf.Clamp01(speed_boost_timer / speed_boost_duration);
+		}
+		else
+		{
+			speed_boost_multiplier = 1f;
+		}
 
 		Vector3 desired_planar_velocity = facing_override_active ? Vector3.zero : ComputeDesiredPlanarVelocity();
 		desired_planar_velocity = ApplyObstacleAvoidance(desired_planar_velocity);
@@ -392,7 +409,7 @@ public class MirrorActor : MonoBehaviour
 	Vector3 ClampDesiredVelocity(Vector3 desired)
 	{
 		desired.y = 0f;
-		return Vector3.ClampMagnitude(desired, MaxGroundSpeed);
+		return Vector3.ClampMagnitude(desired, MaxGroundSpeed * speed_boost_multiplier);
 	}
 
 	Vector3 ApplyObstacleAvoidance(Vector3 desired_planar_velocity)
@@ -468,6 +485,7 @@ public class MirrorActor : MonoBehaviour
 		Vector3 desired_delta = desired_planar_velocity - current_planar_velocity;
 
 		float acceleration = desired_planar_velocity.sqrMagnitude > 0.0001f ? SteeringAcceleration : BrakingAcceleration;
+		acceleration *= speed_boost_multiplier;
 		Vector3 steering = desired_delta * acceleration;
 		steering.y = 0f;
 
@@ -488,11 +506,19 @@ public class MirrorActor : MonoBehaviour
 		if (rb == null)
 			return;
 
-		if (UseGravity)
+		if (is_hopping)
+		{
+			rb.AddForce(Vector3.down * BreakBoostHopGravity, ForceMode.Acceleration);
+			if (rb.linearVelocity.y <= 0f)
+				is_hopping = false;
+		}
+		else if (UseGravity)
+		{
 			rb.AddForce(Vector3.down * Downforce, ForceMode.Acceleration);
+		}
 
 		Vector3 full_velocity = rb.linearVelocity;
-		if (full_velocity.y < GroundStickVelocity)
+		if (!is_hopping && full_velocity.y < GroundStickVelocity)
 			full_velocity.y = GroundStickVelocity;
 		rb.linearVelocity = full_velocity;
 	}
@@ -501,10 +527,11 @@ public class MirrorActor : MonoBehaviour
 	{
 		Vector3 full_velocity = rb.linearVelocity;
 		Vector3 planar = new Vector3(full_velocity.x, 0f, full_velocity.z);
+		float effective_max = MaxGroundSpeed * speed_boost_multiplier;
 
-		if (planar.sqrMagnitude > MaxGroundSpeed * MaxGroundSpeed)
+		if (planar.sqrMagnitude > effective_max * effective_max)
 		{
-			planar = planar.normalized * MaxGroundSpeed;
+			planar = planar.normalized * effective_max;
 			full_velocity.x = planar.x;
 			full_velocity.z = planar.z;
 			rb.linearVelocity = full_velocity;
@@ -619,9 +646,16 @@ public class MirrorActor : MonoBehaviour
 		CachePanelBaseRotation();
 
 		if (PanelSpin)
+		{
 			panel_x_current += PanelSpinSpeed * Time.deltaTime;
+		}
 		else
+		{
+			float speed_ratio = Mathf.Clamp01(PlanarVelocity.magnitude / Mathf.Max(0.01f, MaxGroundSpeed));
+			float velocity_tilt = PanelXAngle + speed_ratio * PanelXVelocityTilt;
+			panel_x_target = velocity_tilt;
 			panel_x_current = Mathf.MoveTowards(panel_x_current, panel_x_target, PanelXSpeed * Time.deltaTime);
+		}
 
 		MirrorPivotX.localRotation = panel_base_local_rotation * Quaternion.AngleAxis(panel_x_current, Vector3.right);
 
@@ -894,6 +928,19 @@ public class MirrorActor : MonoBehaviour
 		}
 
 		Break(impact_point);
+	}
+
+	public void ApplySpeedBoost(float multiplier, float duration)
+	{
+		speed_boost_multiplier = multiplier;
+		speed_boost_duration = duration;
+		speed_boost_timer = duration;
+
+		if (rb != null)
+		{
+			rb.AddForce(Vector3.up * BreakBoostHopForce, ForceMode.VelocityChange);
+			is_hopping = true;
+		}
 	}
 
 	public void ForceBreak()
