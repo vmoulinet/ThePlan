@@ -729,9 +729,7 @@ if (average_speed > TriangleStableAverageSpeedThreshold)
 		float dist_to_anchor = Vector3.Distance(flat_pos, anchor);
 
 		int side;
-		bool has_cached = triangleSide.TryGetValue(actor, out int cached_side);
-
-		if (has_cached && mirrorsAtPosition.Contains(actor))
+		if (triangleSide.TryGetValue(actor, out int cached_side))
 		{
 			side = cached_side;
 		}
@@ -763,10 +761,10 @@ if (average_speed > TriangleStableAverageSpeedThreshold)
 
 	static readonly Vector2[] stageBounds = new Vector2[]
 	{
-		new Vector2(-5.96f, 4.34f),   // haut gauche  (x, z)
-		new Vector2(6.03f, 4.28f),    // haut droite
-		new Vector2(7.37f, -6f),      // bas droite
-		new Vector2(-7.33f, -6f),     // bas gauche
+		new Vector2(-4.96f, 3.34f),   // haut gauche  (x, z)
+		new Vector2(5.03f, 3.28f),    // haut droite
+		new Vector2(6.37f, -5f),      // bas droite
+		new Vector2(-6.33f, -5f),     // bas gauche
 	};
 
 	Vector3 ClampToStageBounds(Vector3 target)

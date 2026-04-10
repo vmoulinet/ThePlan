@@ -87,6 +87,9 @@ public class EventManager : MonoBehaviour
 
 	void RouteDefaultStompResponse(float stomp_force, string source)
 	{
+		if (SimulationManager != null && SimulationManager.MirrorManager != null)
+			SimulationManager.MirrorManager.BreakAllMirrors();
+
 		if (!StompTriggersVideo)
 			return;
 
