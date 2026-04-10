@@ -24,6 +24,9 @@ public class MirrorManager : MonoBehaviour
 	public float RespawnDelay = 1.0f;
 	public float RespawnRingSpacing = 0.75f;
 
+	[Header("Debris Limit")]
+	public int MaxDebrisCount = 25;
+
 	[Header("Debris Impact")]
 	public float DebrisForce = 9f;
 	public float DebrisRadius = 3.5f;
@@ -34,6 +37,7 @@ public class MirrorManager : MonoBehaviour
 	public float DebrisDirectionalRadiusBonus = 0.75f;
 
 	readonly List<MirrorSpawnPoint> spawnPoints = new List<MirrorSpawnPoint>();
+	readonly List<MirrorDebris> debris_pool = new List<MirrorDebris>();
 
 	Vector3 cachedCenter;
 	int cachedCenterFrame = -1;
@@ -207,7 +211,9 @@ public class MirrorManager : MonoBehaviour
 		if (DebrisPrefab == null || mirror == null)
 			return;
 
-		MirrorDebris debris = Instantiate(DebrisPrefab, DebrisRoot);
+		SinkOldestDebrisIfNeeded();
+
+		MirrorDebris debris = GetDebrisFromPool();
 		debris.InitializeFromMirror(mirror);
 
 		Vector3 impact_direction = mirror.LastBreakImpactDirection;
@@ -238,6 +244,44 @@ public class MirrorManager : MonoBehaviour
 				" | applied_radius=" + applied_radius.ToString("F2")
 			);
 		}
+	}
+
+	MirrorDebris GetDebrisFromPool()
+	{
+		for (int i = 0; i < debris_pool.Count; i++)
+		{
+			if (debris_pool[i] != null && !debris_pool[i].gameObject.activeSelf)
+			{
+				debris_pool[i].ResetForReuse();
+				return debris_pool[i];
+			}
+		}
+
+		MirrorDebris debris = Instantiate(DebrisPrefab, DebrisRoot);
+		debris_pool.Add(debris);
+		return debris;
+	}
+
+	void SinkOldestDebrisIfNeeded()
+	{
+		int active_count = 0;
+		MirrorDebris oldest_active = null;
+
+		for (int i = 0; i < debris_pool.Count; i++)
+		{
+			MirrorDebris d = debris_pool[i];
+			if (d != null && d.gameObject.activeSelf && !d.IsSinking)
+			{
+				active_count++;
+				if (oldest_active == null)
+					oldest_active = d;
+			}
+		}
+
+		if (active_count < MaxDebrisCount || oldest_active == null)
+			return;
+
+		oldest_active.StartSinking();
 	}
 
 	IEnumerator RespawnMirrorRoutine(MirrorActor mirror)

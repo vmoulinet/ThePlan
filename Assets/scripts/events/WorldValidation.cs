@@ -146,7 +146,7 @@ public class WorldValidation : MonoBehaviour
 		for (int i = 0; i < cached_bodies.Length; i++)
 		{
 			Rigidbody body = cached_bodies[i];
-			if (body == null)
+			if (body == null || body.isKinematic)
 				continue;
 
 			float spin_strength = Random.Range(InitialSpinMin, InitialSpinMax);
@@ -170,7 +170,7 @@ public class WorldValidation : MonoBehaviour
 			for (int bi = 0; bi < bodies.Length; bi++)
 			{
 				Rigidbody body = bodies[bi];
-				if (body == null)
+				if (body == null || body.isKinematic)
 					continue;
 
 				body.linearDamping = AttractDamping;

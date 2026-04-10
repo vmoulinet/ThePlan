@@ -86,14 +86,14 @@ MonoBehaviour:
   MirrorPivotX: {fileID: 3847452779503912560}
   IntactVisual: {fileID: 0}
   Mass: 1
-  AttractionStrength: 5.66
+  AttractionStrength: 7.19
   Damping: 0.98
-  RotationSpeed: 10.46
-  SteeringAcceleration: 8
-  BrakingAcceleration: 10
-  MaxGroundSpeed: 3.5
-  WallSlideDamping: 0.97
-  DirectionResponsiveness: 4
+  RotationSpeed: 14.65
+  SteeringAcceleration: 10.17
+  BrakingAcceleration: 9.5
+  MaxGroundSpeed: 2.97
+  WallSlideDamping: 0
+  DirectionResponsiveness: 8.77
   VelocityResponsiveness: 3
   MinRotationSpeed: 0.2
   AvoidanceLookAhead: 1.4
@@ -119,6 +119,7 @@ MonoBehaviour:
   PanelXVelocityTilt: 25
   PendulumTag: Pendulum
   BreakBoostHopForce: 1.78
+  BreakBoostHopGravity: 15
   DebugDraw: 0
   DebugPanel: 0
   CircleTarget: {x: 0, y: 0, z: 0}

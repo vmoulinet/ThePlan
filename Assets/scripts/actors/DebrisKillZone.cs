@@ -11,8 +11,8 @@ public class DebrisKillZone : MonoBehaviour
 		if (debris != null)
 		{
 			if (DebugLog)
-				Debug.Log("[kill_zone] destroying debris " + debris.name);
-			Destroy(debris.gameObject);
+				Debug.Log("[kill_zone] returning debris to pool " + debris.name);
+			debris.ReturnToPool();
 			return;
 		}
 
@@ -20,8 +20,9 @@ public class DebrisKillZone : MonoBehaviour
 		if (mirror != null && !mirror.IsBroken)
 		{
 			if (DebugLog)
-				Debug.Log("[kill_zone] force breaking mirror " + mirror.name);
-			mirror.ForceBreak();
+				Debug.Log("[kill_zone] respawning mirror " + mirror.name);
+			if (mirror.CurrentSpawnPoint != null)
+				mirror.ResetToSpawn(mirror.CurrentSpawnPoint);
 		}
 	}
 }

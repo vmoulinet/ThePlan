@@ -21,13 +21,121 @@ public class MirrorDebris : MonoBehaviour
 	public float DebrisLoopSpeedForMax = 6f;
 	public float DebrisLoopLerpSpeed = 10f;
 
+	[Header("Sink")]
+	public float SinkForceLight = 1f;
+	public float SinkForceFast = 20f;
+	public float SinkFastBelowY = -1f;
+	public float SinkDestroyBelowY = -10f;
+
 	SoundManager sound_manager;
 
 	Rigidbody[] cached_bodies;
+	Vector3[] initial_local_positions;
+	Quaternion[] initial_local_rotations;
 	float last_ground_impact_time = -999f;
 	float current_loop_amount = 0f;
+	bool is_sinking = false;
+	bool snapshot_taken = false;
+
+	public bool IsSinking => is_sinking;
+
+	void Awake()
+	{
+		CacheAndSnapshot();
+	}
+
+	void CacheAndSnapshot()
+	{
+		if (snapshot_taken)
+			return;
+
+		cached_bodies = GetComponentsInChildren<Rigidbody>(true);
+		initial_local_positions = new Vector3[cached_bodies.Length];
+		initial_local_rotations = new Quaternion[cached_bodies.Length];
+
+		for (int i = 0; i < cached_bodies.Length; i++)
+		{
+			if (cached_bodies[i] != null)
+			{
+				initial_local_positions[i] = cached_bodies[i].transform.localPosition;
+				initial_local_rotations[i] = cached_bodies[i].transform.localRotation;
+			}
+		}
+
+		snapshot_taken = true;
+	}
+
+	public void ResetForReuse()
+	{
+		CacheAndSnapshot();
+
+		is_sinking = false;
+		last_ground_impact_time = -999f;
+		current_loop_amount = 0f;
+
+		for (int i = 0; i < cached_bodies.Length; i++)
+		{
+			if (cached_bodies[i] == null)
+				continue;
+
+			cached_bodies[i].transform.localPosition = initial_local_positions[i];
+			cached_bodies[i].transform.localRotation = initial_local_rotations[i];
+			cached_bodies[i].linearVelocity = Vector3.zero;
+			cached_bodies[i].angularVelocity = Vector3.zero;
+			cached_bodies[i].isKinematic = false;
+			cached_bodies[i].useGravity = true;
+			cached_bodies[i].detectCollisions = true;
+		}
+
+		gameObject.SetActive(true);
+	}
+
+	public void ReturnToPool()
+	{
+		gameObject.SetActive(false);
+	}
+
+	float sink_y_offset = 0f;
+
+	public void StartSinking()
+	{
+		is_sinking = true;
+		sink_y_offset = 0f;
+
+		if (cached_bodies == null || cached_bodies.Length == 0)
+			cached_bodies = GetComponentsInChildren<Rigidbody>(true);
+
+		for (int i = 0; i < cached_bodies.Length; i++)
+		{
+			if (cached_bodies[i] != null)
+			{
+				cached_bodies[i].isKinematic = true;
+				cached_bodies[i].detectCollisions = false;
+			}
+		}
+	}
 
 	void Update()
+	{
+		if (!is_sinking)
+		{
+			UpdateSound();
+			return;
+		}
+
+		float speed = sink_y_offset < SinkFastBelowY ? SinkForceFast : SinkForceLight;
+		sink_y_offset -= speed * Time.deltaTime;
+
+		if (sink_y_offset < SinkDestroyBelowY)
+		{
+			ReturnToPool();
+			return;
+		}
+
+		transform.position += Vector3.down * speed * Time.deltaTime;
+	}
+
+	void UpdateSound()
 	{
 		if (sound_manager == null)
 			return;
