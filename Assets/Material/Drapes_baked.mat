@@ -25,11 +25,11 @@ Material:
   stringTagMap:
     RenderType: Transparent
   disabledShaderPasses:
-  - TransparentDepthPrepass
+  - MOTIONVECTORS
   - TransparentDepthPostpass
   - TransparentBackface
   - RayTracingPrepass
-  - MOTIONVECTORS
+  - TransparentDepthPrepass
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -189,7 +189,7 @@ Material:
     - _HeightTessAmplitude: 2
     - _HeightTessCenter: 0.5
     - _InvTilingScale: 1
-    - _Ior: 1.5
+    - _Ior: 1.603
     - _IridescenceMask: 1
     - _IridescenceThickness: 1
     - _LinkDetailsWithBase: 1

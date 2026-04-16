@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Pendulum
   - Debris
+  - SourceLight
   layers:
   - Default
   - TransparentFX

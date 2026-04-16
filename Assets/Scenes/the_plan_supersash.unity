@@ -576,7 +576,7 @@ MonoBehaviour:
           data1: 0
           data2: 0
       bufferClearing:
-        clearColorMode: 1
+        clearColorMode: 0
         backgroundColorHDR: {r: 0, g: 0, b: 0, a: 0}
         clearDepth: 1
       volumes:
@@ -1893,7 +1893,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: ad007f8739daee241a47a9990ecd3963, type: 2}
+  - {fileID: 2100000, guid: b5e4efcd4958a1d44aa8cde0d7960dc9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -2529,7 +2529,7 @@ MonoBehaviour:
   ChoreographyManager: {fileID: 1758520097}
   WordManager: {fileID: 1018003983}
   SoundManager: {fileID: 633454979}
-  StartingMirrorCount: 7
+  StartingMirrorCount: 9
   SpawnInterval: 3
   RespawnDelay: 1
   RespawnRingSpacing: 0.75
@@ -2541,7 +2541,7 @@ MonoBehaviour:
   DebrisMaxBonusForce: 3
   DebrisDirectionalBackshift: 1.2
   DebrisDirectionalRadiusBonus: 2
-  BreakBoostMultiplier: 2.99
+  BreakBoostMultiplier: 1.91
   BreakBoostDuration: 7.66
   EnableDebugBreakAll: 1
   BreakAllKey: 114
@@ -3267,7 +3267,7 @@ GameObject:
   - component: {fileID: 828083419}
   m_Layer: 0
   m_Name: Spotlight_jar
-  m_TagString: Untagged
+  m_TagString: SourceLight
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -6762,7 +6762,7 @@ MonoBehaviour:
   MirrorManager: {fileID: 645884744}
   ChoreographyAnchor: {fileID: 1931337003}
   CurrentState: 0
-  DebugChoreography: 0
+  DebugChoreography: 1
   DebugCircleTargets: 0
   DebugLogInterval: 1
   DebugTriangleLinks: 0
@@ -6771,8 +6771,8 @@ MonoBehaviour:
   DebugTriangleLineHeight: 0.15
   TriangleMinDistance: 5.2
   TriangleMaxDistance: 17
-  ToleranceRadius: 1.71
-  TriangleStableDistanceTolerance: 2.51
+  ToleranceRadius: 5.14
+  TriangleStableDistanceTolerance: 4.94
   TriangleStableDistanceHysteresis: 3.72
   TriangleStableSpeedThreshold: 0.79
   TriangleStableHoldDuration: 1.2
@@ -6789,22 +6789,19 @@ MonoBehaviour:
   IncludeSpiral: 1
   IncludeCircle: 1
   IncludeChaos: 1
-  IncludeScatter: 1
   IncludeLine: 1
   SpiralInterval: 30
   SpiralDuration: 6
   SpiralStrength: 0.8
-  CircleRadius: 9
+  CircleRadius: 4
+  CircleOrbitSpeed: 60
+  CircleMirrorSpeed: 3
   CircleHoldDuration: 2
-  CircleMoveTimeout: 6
-  CircleOrientTimeout: 3
-  CircleOrientationTolerance: 8
   ChaosStrength: 1.5
   ChaosOrbitStrength: 2
-  ScatterStrength: 4
   LineSpacing: 0.5
   LineDirection: {x: 1, y: 0, z: 0}
-  Center: {x: 0.7838356, y: -0.03060375, z: -0.9370943}
+  Center: {x: -1.8858008, y: -0.030604044, z: -0.27732244}
   CurrentCirclePhase: 2
 --- !u!1 &1823688464
 GameObject:
@@ -7600,7 +7597,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Profile: {fileID: 11400000, guid: 8ba92e2dd7f884a0f88b98fa2d235fe7, type: 2}
-  m_StaticLightingSkyUniqueID: 4
+  m_StaticLightingSkyUniqueID: 0
   m_StaticLightingCloudsUniqueID: 0
   m_StaticLightingVolumetricClouds: 0
   bounces: 1
@@ -7660,7 +7657,7 @@ GameObject:
   - component: {fileID: 2079059334}
   m_Layer: 0
   m_Name: Spotlight_cour
-  m_TagString: Untagged
+  m_TagString: SourceLight
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -8022,7 +8019,7 @@ PrefabInstance:
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 6d241623df50b3b4fa5d621d3b42f34a, type: 2}
+      objectReference: {fileID: 2100000, guid: 6e4cff20241f3f447b1a955567418a97, type: 2}
     - target: {fileID: -3859413086195181340, guid: e1388c09f6adaad4e97769b8f31ac801,
         type: 3}
       propertyPath: m_LocalPosition.z
@@ -8032,7 +8029,7 @@ PrefabInstance:
         type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 6d241623df50b3b4fa5d621d3b42f34a, type: 2}
+      objectReference: {fileID: 2100000, guid: 6e4cff20241f3f447b1a955567418a97, type: 2}
     - target: {fileID: 919132149155446097, guid: e1388c09f6adaad4e97769b8f31ac801,
         type: 3}
       propertyPath: m_Name

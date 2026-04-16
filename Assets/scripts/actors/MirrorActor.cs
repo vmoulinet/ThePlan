@@ -57,8 +57,6 @@ public class MirrorActor : MonoBehaviour
 
 	[Header("Break")]
 	public string PendulumTag = "Pendulum";
-	public float BreakBoostHopForce = 2f;
-	public float BreakBoostHopGravity = 15f;
 
 	[Header("Debug")]
 	public bool DebugDraw = true;
@@ -83,13 +81,11 @@ public class MirrorActor : MonoBehaviour
 	Collider[] debris_push_hits = new Collider[12];
 	Collider[] own_colliders;
 	float base_max_ground_speed;
+	bool speed_override_active = false;
 	float speed_boost_multiplier = 1f;
 	float speed_boost_timer = 0f;
 	float speed_boost_initial_multiplier = 1f;
 	float speed_boost_duration = 0f;
-	bool is_hopping = false;
-	RigidbodyConstraints pre_hop_constraints;
-	Quaternion hop_frozen_rotation;
 
 	public bool IsBroken
 	{
@@ -258,15 +254,6 @@ public class MirrorActor : MonoBehaviour
 			speed_boost_multiplier = 1f;
 		}
 
-		if (is_hopping)
-		{
-			rb.linearVelocity = new Vector3(0f, rb.linearVelocity.y, 0f);
-			rb.angularVelocity = Vector3.zero;
-			rb.rotation = hop_frozen_rotation;
-			ApplyGrounding();
-			return;
-		}
-
 		Vector3 desired_planar_velocity = ComputeDesiredPlanarVelocity();
 		desired_planar_velocity = ApplyObstacleAvoidance(desired_planar_velocity);
 
@@ -301,9 +288,6 @@ public class MirrorActor : MonoBehaviour
 
 			case ChoreographyState.Chaos:
 				return ComputeChaosVelocity(choreography);
-
-			case ChoreographyState.Scatter:
-				return ComputeScatterVelocity(choreography);
 
 			case ChoreographyState.Line:
 				return ComputeLineVelocity(choreography);
@@ -374,20 +358,6 @@ public class MirrorActor : MonoBehaviour
 		return ClampDesiredVelocity(desired);
 	}
 
-	Vector3 ComputeScatterVelocity(ChoreographyManager choreography)
-	{
-		Vector3 center = choreography.GetResolvedAnchorPoint();
-		Vector3 away = WorldPosition - center;
-		away.y = 0f;
-
-		Vector3 desired = Vector3.zero;
-		if (away.sqrMagnitude > 0.0001f)
-			desired += away.normalized * choreography.ScatterStrength;
-
-		desired += NoiseVelocity();
-		desired += ComputeAnchorIntent(choreography);
-		return ClampDesiredVelocity(desired);
-	}
 
 	Vector3 ComputeLineVelocity(ChoreographyManager choreography)
 	{
@@ -532,23 +502,13 @@ public class MirrorActor : MonoBehaviour
 		if (rb == null)
 			return;
 
-		if (is_hopping)
-		{
-			rb.AddForce(Vector3.down * BreakBoostHopGravity, ForceMode.Acceleration);
-			if (rb.linearVelocity.y <= 0f)
-			{
-				is_hopping = false;
-				rb.constraints = pre_hop_constraints;
-				speed_boost_multiplier = speed_boost_initial_multiplier;
-			}
-		}
-		else if (UseGravity)
+		if (UseGravity)
 		{
 			rb.AddForce(Vector3.down * Downforce, ForceMode.Acceleration);
 		}
 
 		Vector3 full_velocity = rb.linearVelocity;
-		if (!is_hopping && full_velocity.y < GroundStickVelocity)
+		if (full_velocity.y < GroundStickVelocity)
 			full_velocity.y = GroundStickVelocity;
 		rb.linearVelocity = full_velocity;
 	}
@@ -681,11 +641,6 @@ public class MirrorActor : MonoBehaviour
 		}
 		else
 		{
-			if (is_hopping)
-			{
-				panel_x_target = 0f;
-			}
-			else
 			{
 				float speed_ratio = Mathf.Clamp01(PlanarVelocity.magnitude / Mathf.Max(0.01f, MaxGroundSpeed * speed_boost_multiplier));
 				float velocity_tilt = PanelXAngle + speed_ratio * PanelXVelocityTilt;
@@ -823,6 +778,18 @@ public class MirrorActor : MonoBehaviour
 	{
 		panel_x_target = angle_degrees;
 		PanelSpin = false;
+	}
+
+	public void SetSpeedOverride(float speed)
+	{
+		speed_override_active = true;
+		MaxGroundSpeed = speed;
+	}
+
+	public void ClearSpeedOverride()
+	{
+		speed_override_active = false;
+		MaxGroundSpeed = base_max_ground_speed * Random.Range(1f - SpeedRandomRange, 1f + SpeedRandomRange);
 	}
 
 	public void SetPanelSpin(bool enabled, float spin_speed = -1f)
@@ -972,21 +939,9 @@ public class MirrorActor : MonoBehaviour
 	public void ApplySpeedBoost(float multiplier, float duration)
 	{
 		speed_boost_initial_multiplier = multiplier;
-		speed_boost_multiplier = 1f;
+		speed_boost_multiplier = multiplier;
 		speed_boost_duration = duration;
 		speed_boost_timer = duration;
-
-		if (rb != null && !is_hopping)
-		{
-			pre_hop_constraints = rb.constraints;
-			rb.constraints = RigidbodyConstraints.FreezePositionX | RigidbodyConstraints.FreezePositionZ | RigidbodyConstraints.FreezeRotation;
-			rb.linearVelocity = Vector3.zero;
-			rb.angularVelocity = Vector3.zero;
-			smoothed_desired_planar_velocity = Vector3.zero;
-			hop_frozen_rotation = rb.rotation;
-			rb.AddForce(Vector3.up * BreakBoostHopForce, ForceMode.VelocityChange);
-			is_hopping = true;
-		}
 	}
 
 	public void ForceBreak()
