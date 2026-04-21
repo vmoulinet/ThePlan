@@ -15,12 +15,14 @@
  *   - OSC by CNMAT (https://github.com/CNMAT/OSC)
  *   - Adafruit NeoPixel
  *
- * Connexions HX711 :
- *   DAT -> pin 12 / 10
- *   CLK -> pin 13 / 11
+ * Connexions HX711 (4 amplis sommés) :
+ *   AMP1 DAT/CLK -> GPIO 5  / 9
+ *   AMP2 DAT/CLK -> GPIO 10 / 11
+ *   AMP3 DAT/CLK -> A0 / A1
+ *   AMP4 DAT/CLK -> A2 / A3
  *
  * LED APA106 :
- *   DIN -> pin 5 (via 330Ω)
+ *   DIN -> pin 13 (via 330Ω)
  *   VCC -> 5V
  *   GND -> GND
  *
@@ -39,9 +41,19 @@
 #include <Adafruit_NeoPixel.h>
 
 // ─── LED ─────────────────────────────────────────────────────────────────────
-#define LED_PIN   5
-#define LED_COUNT 1
+#define LED_PIN           13   // LED externe APA106
+#define LED_ONBOARD_PIN   PIN_NEOPIXEL   // NeoPixel embarquée du Feather (GPIO 33)
+#define LED_COUNT         1
 Adafruit_NeoPixel led(LED_COUNT, LED_PIN, NEO_RGB + NEO_KHZ800);
+Adafruit_NeoPixel ledOnboard(LED_COUNT, LED_ONBOARD_PIN, NEO_GRB + NEO_KHZ800);
+
+// Écrit la même couleur sur les deux LEDs
+void ledWrite(uint32_t color) {
+  led.setPixelColor(0, color);
+  led.show();
+  ledOnboard.setPixelColor(0, color);
+  ledOnboard.show();
+}
 
 const uint32_t COL_OFF    = 0x000000;
 const uint32_t COL_WHITE  = 0xFFFFFF;
@@ -59,24 +71,21 @@ void ledFlash(uint32_t color, unsigned long durationMs) {
   flashActive = true;
   flashEnd    = millis() + durationMs;
   flashColor  = color;
-  led.setPixelColor(0, color);
-  led.show();
+  ledWrite(color);
 }
 
 // Appeler chaque loop — gère la fin du flash
 void ledUpdate() {
   if (flashActive && millis() > flashEnd) {
     flashActive = false;
-    led.setPixelColor(0, COL_OFF);
-    led.show();
+    ledWrite(COL_OFF);
   }
 }
 
 // Allume une couleur fixe (interrompt un flash en cours)
 void ledSet(uint32_t color) {
   flashActive = false;
-  led.setPixelColor(0, color);
-  led.show();
+  ledWrite(color);
 }
 
 // ─── Batterie ─────────────────────────────────────────────────────────────────
@@ -92,8 +101,8 @@ float readBatteryPct() {
 }
 
 // ─── WiFi ────────────────────────────────────────────────────────────────────
-const char* WIFI_SSID = "Le_Moulin_2";
-const char* WIFI_PASS = "venasque";
+const char* WIFI_SSID = "Daddy_router";
+const char* WIFI_PASS = "STOMPdaddyHARDER";
 
 const unsigned int OSC_OUT_PORT = 8000;
 const unsigned int OSC_IN_PORT  = 8001;
@@ -104,13 +113,23 @@ IPAddress unityIP(0, 0, 0, 0);
 bool      wifiOK = false;
 
 // ─── HX711 ───────────────────────────────────────────────────────────────────
-#define LOADCELL_DAT_PIN  12
-#define LOADCELL_CLK_PIN  13
+#define LOADCELL1_DAT_PIN 5
+#define LOADCELL1_CLK_PIN 9
 #define LOADCELL2_DAT_PIN 10
 #define LOADCELL2_CLK_PIN 11
+#define LOADCELL3_DAT_PIN A0
+#define LOADCELL3_CLK_PIN A1
+#define LOADCELL4_DAT_PIN A2
+#define LOADCELL4_CLK_PIN A3
 
-float CALIBRATION_FACTOR  = 12205.0f;
-float CALIBRATION_FACTOR2 = 11035.0f;
+#define NUM_SCALES 4
+
+float CALIBRATION_FACTOR[NUM_SCALES] = {
+  12205.0f,  // AMP1
+  11035.0f,  // AMP2
+  12000.0f,  // AMP3 — à calibrer
+  12000.0f,  // AMP4 — à calibrer
+};
 
 const unsigned long SEND_INTERVAL_MS = 12;
 
@@ -138,9 +157,9 @@ const unsigned long PEAK_WINDOW_MS    = 600;
 unsigned long graceUntil = 0;
 const unsigned long GRACE_MS = 2000;
 
-HX711 scale;
-HX711 scale2;
-bool  readScale1 = true;
+HX711 scales[NUM_SCALES];
+float lastScaleValue[NUM_SCALES] = {0.0f, 0.0f, 0.0f, 0.0f};
+int   scaleIdx = 0;
 
 unsigned long lastSendTime  = 0;
 unsigned long lastStompTime = 0;
@@ -153,7 +172,6 @@ float prevRaw     = 0.0f;
 float prevMed     = 0.0f;
 float rawBefore   = 0.0f;
 float rawBaseline = 0.0f;
-float prevOther   = 0.0f;
 const float BASELINE_ALPHA = 0.002f;
 
 bool          jumpRising     = false;
@@ -195,18 +213,23 @@ void setup() {
   Serial.begin(115200);
   while (!Serial && millis() < 3000) {}
 
+  // Alim NeoPixel embarquée du Feather ESP32-S3
+#ifdef NEOPIXEL_POWER
+  pinMode(NEOPIXEL_POWER, OUTPUT);
+  digitalWrite(NEOPIXEL_POWER, HIGH);
+#endif
+
   led.begin();
   led.setBrightness(5);
-  led.clear();
-  led.show(); // éteindre immédiatement pour écraser l'état parasite
+  ledOnboard.begin();
+  ledOnboard.setBrightness(5);
+  ledWrite(COL_OFF); // éteindre immédiatement pour écraser l'état parasite
 
   // Flash blanc boot
-  led.setPixelColor(0, COL_WHITE);
-  led.show();
+  ledWrite(COL_WHITE);
   Serial.println("LED: flash blanc (boot)");
   delay(300);
-  led.setPixelColor(0, COL_OFF);
-  led.show();
+  ledWrite(COL_OFF);
 
   // Clignotement bleu pendant recherche WiFi
   WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -214,12 +237,10 @@ void setup() {
   bool blinkState = false;
   while (WiFi.status() != WL_CONNECTED && millis() - wifiStart < 5000) {
     blinkState = !blinkState;
-    led.setPixelColor(0, blinkState ? COL_BLUE : COL_OFF);
-    led.show();
+    ledWrite(blinkState ? COL_BLUE : COL_OFF);
     delay(500);
   }
-  led.setPixelColor(0, COL_OFF);
-  led.show();
+  ledWrite(COL_OFF);
   if (WiFi.status() == WL_CONNECTED) {
     wifiOK = true;
     udp.begin(OSC_IN_PORT);
@@ -229,19 +250,18 @@ void setup() {
     Serial.println("WiFi KO — serial only");
   }
 
-  scale.begin(LOADCELL_DAT_PIN, LOADCELL_CLK_PIN);
-  scale.set_scale(CALIBRATION_FACTOR);
-  scale.tare();
-
-  scale2.begin(LOADCELL2_DAT_PIN, LOADCELL2_CLK_PIN);
-  scale2.set_scale(CALIBRATION_FACTOR2);
-  scale2.tare();
+  const uint8_t datPins[NUM_SCALES] = {LOADCELL1_DAT_PIN, LOADCELL2_DAT_PIN, LOADCELL3_DAT_PIN, LOADCELL4_DAT_PIN};
+  const uint8_t clkPins[NUM_SCALES] = {LOADCELL1_CLK_PIN, LOADCELL2_CLK_PIN, LOADCELL3_CLK_PIN, LOADCELL4_CLK_PIN};
+  for (int i = 0; i < NUM_SCALES; i++) {
+    scales[i].begin(datPins[i], clkPins[i]);
+    scales[i].set_scale(CALIBRATION_FACTOR[i]);
+    scales[i].tare();
+  }
 
   for (int i = 0; i < MED_SIZE; i++) medBuf[i] = 0.0f;
 
   // LED éteinte par défaut
-  led.setPixelColor(0, COL_OFF);
-  led.show();
+  ledWrite(COL_OFF);
 }
 
 // ─── Loop ────────────────────────────────────────────────────────────────────
@@ -280,8 +300,7 @@ void loop() {
   if (!connected && !lowBattery && now - lastBlueBlink > 500) {
     lastBlueBlink = now;
     blueBlinkState = !blueBlinkState;
-    led.setPixelColor(0, blueBlinkState ? COL_BLUE : COL_OFF);
-    led.show();
+    ledWrite(blueBlinkState ? COL_BLUE : COL_OFF);
   }
 
   // Heartbeat vert toutes les 10s si connecté (wifi ou serial)
@@ -300,17 +319,12 @@ void loop() {
   float dt = (now - lastSendTime) / 1000.0f;
   lastSendTime = now;
 
-  float rawThis = 0.0f;
-  if (readScale1) {
-    if (!scale.is_ready()) return;
-    rawThis = scale.get_units(1);
-  } else {
-    if (!scale2.is_ready()) return;
-    rawThis = scale2.get_units(1);
-  }
-  readScale1 = !readScale1;
+  if (!scales[scaleIdx].is_ready()) return;
+  lastScaleValue[scaleIdx] = scales[scaleIdx].get_units(1);
+  scaleIdx = (scaleIdx + 1) % NUM_SCALES;
 
-  float raw = rawThis + prevOther;
+  float raw = 0.0f;
+  for (int i = 0; i < NUM_SCALES; i++) raw += lastScaleValue[i];
   medBuf[medIdx % MED_SIZE] = raw;
   medIdx++;
   float med = getMedian();
@@ -376,7 +390,8 @@ void loop() {
     ledFlash(COL_YELLOW, 120);
   }
 
-  prevOther = rawThis;
+  sendOSC("/force", raw);
+
   rawBefore = raw;
   prevRaw   = raw;
   prevMed   = med;

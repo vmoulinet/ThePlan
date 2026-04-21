@@ -2,16 +2,15 @@ using UnityEngine;
 
 public class CurtainRipple : MonoBehaviour
 {
-    const int MAX_RIPPLES = 8;
+    [Header("Shockwave Prefab")]
+    public GameObject ShockwavePrefab;
 
-    [Header("References")]
-    public Renderer CurtainRenderer;
-
-    [Header("Ripple")]
-    public float RippleSpeed = 3f;
-    public float RippleWavelength = 0.5f;
-    public float RippleAmplitude = 0.08f;
-    public float RippleLifetime = 2f;
+    [Header("Spawn")]
+    public Transform SpawnPoint;
+    public bool SpawnAtImpactPoint = false;
+    public float SpawnRotationOffsetX = -45f;
+    public float SpawnCooldown = 0.15f;
+    public float AutoDestroyAfter = 4f;
 
     [Header("Detection")]
     public string DebrisTag = "";
@@ -20,57 +19,56 @@ public class CurtainRipple : MonoBehaviour
     [Header("Debug")]
     public bool DebugLog = false;
 
-    Vector4[] ripple_origins = new Vector4[MAX_RIPPLES];
-    Vector4[] ripple_params = new Vector4[MAX_RIPPLES]; // x=birth_time, y=amplitude, z=lifetime, w=active
-    int next_ripple_index = 0;
-    MaterialPropertyBlock mpb;
+    float last_spawn_time = -999f;
 
-    static readonly int id_ripple_origins = Shader.PropertyToID("_RippleOrigins");
-    static readonly int id_ripple_params = Shader.PropertyToID("_RippleParams");
-    static readonly int id_ripple_speed = Shader.PropertyToID("_RippleSpeed");
-    static readonly int id_ripple_wavelength = Shader.PropertyToID("_RippleWavelength");
-    static readonly int id_ripple_count = Shader.PropertyToID("_RippleCount");
-
-    void Awake()
+    void Reset()
     {
-        mpb = new MaterialPropertyBlock();
-
-        if (CurtainRenderer == null)
-            CurtainRenderer = GetComponent<Renderer>();
-
-        for (int i = 0; i < MAX_RIPPLES; i++)
-        {
-            ripple_origins[i] = Vector4.zero;
-            ripple_params[i] = Vector4.zero;
-        }
+        SpawnPoint = transform;
     }
 
-    void Update()
+    void Start()
     {
-        PushToShader();
-    }
-
-    void PushToShader()
-    {
-        if (CurtainRenderer == null)
+        if (!DebugLog)
             return;
 
-        CurtainRenderer.GetPropertyBlock(mpb);
-        mpb.SetVectorArray(id_ripple_origins, ripple_origins);
-        mpb.SetVectorArray(id_ripple_params, ripple_params);
-        mpb.SetFloat(id_ripple_speed, RippleSpeed);
-        mpb.SetFloat(id_ripple_wavelength, RippleWavelength);
-        mpb.SetInt(id_ripple_count, MAX_RIPPLES);
-        CurtainRenderer.SetPropertyBlock(mpb);
+        Collider col = GetComponent<Collider>();
+        Rigidbody rb = GetComponent<Rigidbody>();
+        Debug.Log("[curtain_ripple] start | collider=" + (col != null ? col.GetType().Name : "NONE") +
+                  " | is_trigger=" + (col != null && col.isTrigger) +
+                  " | rigidbody=" + (rb != null) +
+                  " | layer=" + LayerMask.LayerToName(gameObject.layer));
+    }
+
+    void OnTriggerStay(Collider other)
+    {
+        if (DebugLog)
+            Debug.Log("[curtain_ripple] TRIGGER STAY | other=" + other.name);
     }
 
     void OnTriggerEnter(Collider other)
     {
+        if (DebugLog)
+        {
+            MirrorDebris mdb = other != null ? other.GetComponentInParent<MirrorDebris>() : null;
+            Debug.Log("[curtain_ripple] trigger enter | other=" + (other != null ? other.name : "null") +
+                      " | layer=" + (other != null ? LayerMask.LayerToName(other.gameObject.layer) : "n/a") +
+                      " | has_mirror_debris=" + (mdb != null));
+        }
+
         if (!ShouldRipple(other))
             return;
 
-        Vector3 hit_point = other.ClosestPoint(transform.position);
-        AddRipple(hit_point);
+        Vector3 spawn_pos;
+        Transform anchor = SpawnPoint != null ? SpawnPoint : transform;
+
+        if (SpawnAtImpactPoint)
+            spawn_pos = other.ClosestPoint(anchor.position);
+        else
+            spawn_pos = anchor.position;
+
+        Quaternion spawn_rot = anchor.rotation * Quaternion.Euler(SpawnRotationOffsetX, 0f, 0f);
+
+        SpawnShockwave(spawn_pos, spawn_rot);
     }
 
     bool ShouldRipple(Collider other)
@@ -80,7 +78,6 @@ public class CurtainRipple : MonoBehaviour
 
         if (!string.IsNullOrEmpty(DebrisTag) && !other.CompareTag(DebrisTag))
         {
-            // Fallback: check for MirrorDebris component
             if (other.GetComponentInParent<MirrorDebris>() == null)
                 return false;
         }
@@ -93,15 +90,22 @@ public class CurtainRipple : MonoBehaviour
         return true;
     }
 
-    public void AddRipple(Vector3 world_position)
+    void SpawnShockwave(Vector3 position, Quaternion rotation)
     {
-        int index = next_ripple_index;
-        next_ripple_index = (next_ripple_index + 1) % MAX_RIPPLES;
+        if (ShockwavePrefab == null)
+            return;
 
-        ripple_origins[index] = new Vector4(world_position.x, world_position.y, world_position.z, 1f);
-        ripple_params[index] = new Vector4(Time.time, RippleAmplitude, RippleLifetime, 1f);
+        if (Time.time - last_spawn_time < SpawnCooldown)
+            return;
+
+        GameObject instance = Instantiate(ShockwavePrefab, position, rotation);
+
+        if (AutoDestroyAfter > 0f)
+            Destroy(instance, AutoDestroyAfter);
+
+        last_spawn_time = Time.time;
 
         if (DebugLog)
-            Debug.Log("[curtain_ripple] new ripple at " + world_position.ToString("F2") + " | slot=" + index);
+            Debug.Log("[curtain_ripple] spawned shockwave at " + position.ToString("F2"));
     }
 }
