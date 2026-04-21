@@ -1,0 +1,272 @@
+[23:42:09.950] Monitor démarré
+[23:42:09.952] OSC server sur port 8000
+[23:42:09.965] Serial connecté sur COM7
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[23:43:39.979] Ping erreur : [WinError 10065] Une opération a été tentée sur un hôte impossible à atteindre
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[23:43:43.987] Pong reçu du contrôleur
+[SERIAL] [OSC] /ping recu depuis 192.168.8.216
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[23:43:45.999] Pong reçu du contrôleur
+[SERIAL] [OSC] /ping recu depuis 192.168.8.216
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[23:43:47.743] STOMP  1.00
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[23:43:47.985] Pong reçu du contrôleur
+[SERIAL] [OSC] /ping recu depuis 192.168.8.216
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[23:43:48.500] STOMP  1.00
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[23:43:49.239] STOMP  1.00
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[23:43:49.988] Pong reçu du contrôleur
+[SERIAL] [OSC] /ping recu depuis 192.168.8.216
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[23:43:51.987] Pong reçu du contrôleur
+[SERIAL] [OSC] /ping recu depuis 192.168.8.216
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)

@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell.exe -Command \"New-NetFirewallRule -DisplayName 'OSC UDP 8000 in' -Direction Inbound -LocalPort 8000 -Protocol UDP -Action Allow -Profile Any\")"
+    ]
+  }
+}

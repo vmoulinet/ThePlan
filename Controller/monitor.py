@@ -71,14 +71,18 @@ def on_force(addr, value):
         state["osc_connected"] = True
 
 def on_stomp(addr, value):
-    msg = f"STOMP  {value:.2f} kg"
+    msg = f"STOMP  {value:.2f}"
     log(msg)
     with lock:
         state["last_stomp"] = (time.time(), value)
+        state["last_osc_time"] = time.time()
+        state["osc_connected"] = True
 
 def on_pong(addr, *args):
     with lock:
         state["pong_received"] = True
+        state["last_osc_time"] = time.time()
+        state["osc_connected"] = True
     log("Pong reçu du contrôleur")
 
 def start_osc_server():

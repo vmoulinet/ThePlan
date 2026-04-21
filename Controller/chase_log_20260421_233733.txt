@@ -1,0 +1,52 @@
+[23:37:33.376] Monitor démarré
+[23:37:33.377] OSC server erreur : [WinError 10048] Une seule utilisation de chaque adresse de socket (protocole/adresse réseau/port) est habituellement autorisée
+[23:37:33.390] Serial connecté sur COM7
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = LOW (appui)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] >>> STOMP (bouton) -> /stomp 1.0
+[SERIAL] [DBG] GPIO16 = HIGH (relache)
+[SERIAL] [DBG] GPIO16 = HIGH (relache)

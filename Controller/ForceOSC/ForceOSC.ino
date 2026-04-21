@@ -165,7 +165,7 @@ unsigned long lastSendTime  = 0;
 unsigned long lastStompTime = 0;
 unsigned long lastHeartbeat = 0;
 unsigned long lastBatCheck  = 0;
-const unsigned long HEARTBEAT_MS = 10000;
+const unsigned long HEARTBEAT_MS = 5000;
 const unsigned long BAT_CHECK_MS          = 30000;
 
 float prevRaw     = 0.0f;

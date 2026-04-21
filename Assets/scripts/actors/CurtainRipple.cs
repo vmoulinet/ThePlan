@@ -39,12 +39,6 @@ public class CurtainRipple : MonoBehaviour
                   " | layer=" + LayerMask.LayerToName(gameObject.layer));
     }
 
-    void OnTriggerStay(Collider other)
-    {
-        if (DebugLog)
-            Debug.Log("[curtain_ripple] TRIGGER STAY | other=" + other.name);
-    }
-
     void OnTriggerEnter(Collider other)
     {
         if (DebugLog)
