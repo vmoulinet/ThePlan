@@ -41,6 +41,7 @@
 #include <WiFiUdp.h>
 #include <WiFiManager.h>
 #include <OSCMessage.h>
+#include <Preferences.h>
 
 // ─── Pins ────────────────────────────────────────────────────────────────────
 #define ETH_POWER_PIN 17   // Gate MOSFET (futur) - HIGH = W5500 alimente
@@ -64,6 +65,13 @@ NetMode netMode = NET_NONE;
 // ─── Link wait ───────────────────────────────────────────────────────────────
 const unsigned long LINK_UP_WAIT_MS     = 2000;
 const unsigned long WIFI_PORTAL_TIMEOUT = 60;   // secondes (timeout portail captif)
+
+// ─── Reset trigger (triple power-cycle) ──────────────────────────────────────
+// 3 reboots rapides (<10s d'uptime) -> reset credentials WiFi + portail force
+const unsigned long BOOT_GRACE_MS        = 10000;  // fenetre pour qu'un reboot compte
+const int           RESET_BOOT_THRESHOLD = 3;
+Preferences bootPrefs;
+bool forceResetPortal = false;
 
 // ─── Bouton (debounce) ───────────────────────────────────────────────────────
 const unsigned long DEBOUNCE_MS       = 30;
@@ -214,6 +222,11 @@ bool tryWiFi() {
   wm.setConfigPortalTimeout(WIFI_PORTAL_TIMEOUT);
   wm.setConnectTimeout(15);
 
+  if (forceResetPortal) {
+    Serial.println("      [!] Triple power-cycle detecte -> reset credentials + portail force");
+    wm.resetSettings();
+  }
+
   // autoConnect :
   //   - tente de se reconnecter aux credentials stockes en flash
   //   - si echec, demarre un AP "Daddy_controllerSETUP" avec portail captif
@@ -230,12 +243,46 @@ bool tryWiFi() {
   return true;
 }
 
+// ─── Triple power-cycle detection ────────────────────────────────────────────
+// Au boot on incremente un compteur en NVS. Si >= threshold -> trigger reset.
+// Une tache schedule remet le compteur a 0 apres BOOT_GRACE_MS (un seul reboot
+// "stable" efface l'historique).
+void handleBootCounter() {
+  bootPrefs.begin("bootcnt", false);
+  int count = bootPrefs.getInt("n", 0) + 1;
+  bootPrefs.putInt("n", count);
+  Serial.print("[BOOT] count=");
+  Serial.println(count);
+
+  if (count >= RESET_BOOT_THRESHOLD) {
+    forceResetPortal = true;
+    bootPrefs.putInt("n", 0);   // on consomme le trigger
+    Serial.println("[BOOT] Triple power-cycle detecte !");
+  }
+  bootPrefs.end();
+}
+
+void clearBootCounterIfStable() {
+  // Appele une fois que l'uptime depasse BOOT_GRACE_MS
+  bootPrefs.begin("bootcnt", false);
+  int current = bootPrefs.getInt("n", 0);
+  if (current != 0) {
+    bootPrefs.putInt("n", 0);
+    Serial.println("[BOOT] uptime stable -> compteur reset");
+  }
+  bootPrefs.end();
+}
+
+bool bootCounterCleared = false;
+
 // ─── Setup ───────────────────────────────────────────────────────────────────
 void setup() {
   Serial.begin(115200);
   while (!Serial && millis() < 3000) {}
   Serial.println();
   Serial.println("=== EthTest W5500 + bouton ===");
+
+  handleBootCounter();
 
   pinMode(BUTTON_PIN, INPUT_PULLUP);
 
@@ -261,6 +308,12 @@ void setup() {
 // ─── Loop ────────────────────────────────────────────────────────────────────
 void loop() {
   unsigned long now = millis();
+
+  // Une fois le boot stable, on efface le compteur de power-cycles
+  if (!bootCounterCleared && now > BOOT_GRACE_MS) {
+    clearBootCounterIfStable();
+    bootCounterCleared = true;
+  }
 
   if (netMode == NET_ETH) Ethernet.maintain();
 
