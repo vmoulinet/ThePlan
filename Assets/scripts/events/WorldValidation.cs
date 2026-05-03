@@ -14,6 +14,7 @@ public class WorldValidation : MonoBehaviour
 	public ChoreographyManager ChoreographyManager;
 	public Transform DebrisRoot;
 	public Transform AttractCenter;
+	public DaddyLetterProjector DaddyLetterProjector;
 
 	[Header("Timing")]
 	public float AttractDuration = 2.0f;
@@ -93,6 +94,9 @@ public class WorldValidation : MonoBehaviour
 
 		current_phase = Phase.Attract;
 		phase_timer = 0f;
+
+		if (DaddyLetterProjector != null)
+			DaddyLetterProjector.NotifyWorldValidation();
 
 		if (DebugLog)
 			Debug.Log("[world_validation] trigger | bodies=" + cached_bodies.Length);

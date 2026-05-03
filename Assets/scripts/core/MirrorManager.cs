@@ -13,6 +13,7 @@ public class MirrorManager : MonoBehaviour
 	public ChoreographyManager ChoreographyManager;
 	public WordManager WordManager;
 	public SoundManager SoundManager;
+	public DaddyLetterProjector DaddyLetterProjector;
 
 	[Header("Counts")]
 	public int StartingMirrorCount = 6;
@@ -199,6 +200,8 @@ public class MirrorManager : MonoBehaviour
 		ApplyBreakBoostToAll(mirror);
 		StartCoroutine(RespawnMirrorRoutine(mirror));
 
+		if (DaddyLetterProjector != null)
+			DaddyLetterProjector.NotifyMirrorBroken();
 
 		if (ChoreographyManager != null)
 			ChoreographyManager.RefreshTargets();

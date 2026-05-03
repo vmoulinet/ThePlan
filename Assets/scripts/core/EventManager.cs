@@ -5,6 +5,7 @@ public class EventManager : MonoBehaviour
 	[Header("References")]
 	public SimulationManager SimulationManager;
 	public VideoManager VideoManager;
+	public DaddyLetterProjector DaddyLetterProjector;
 
 	[Header("Debug")]
 	public bool EnableKeyboardDebugStomp = true;
@@ -81,6 +82,9 @@ public class EventManager : MonoBehaviour
 				" | force=" + stomp_force.ToString("F3")
 			);
 		}
+
+		if (DaddyLetterProjector != null)
+			DaddyLetterProjector.NotifyStomp();
 
 		RouteDefaultStompResponse(stomp_force, source);
 	}
