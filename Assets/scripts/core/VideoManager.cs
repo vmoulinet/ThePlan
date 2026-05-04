@@ -18,7 +18,7 @@ public class VideoManager : MonoBehaviour
 
 	[Header("Sources")]
 	public string VideosFolderRelative = "VIDEOS";
-	public string WordListRelative = "scripts/data/wordlist.txt";
+	public string WordListRelative = "wordlist.txt";
 
 	[Header("Playback")]
 	public bool PrepareOnAwake = true;
@@ -266,13 +266,18 @@ public class VideoManager : MonoBehaviour
 			elapsed += Time.unscaledDeltaTime;
 			yield return null;
 		}
+
+		if (VideoPlayer != null)
+		{
+			Debug.Log("[video_manager] prepare result | is_prepared=" + VideoPlayer.isPrepared + " | elapsed=" + elapsed.ToString("F2") + " | url=" + VideoPlayer.url);
+		}
 	}
 
 	void Load_video_paths()
 	{
 		video_paths.Clear();
 
-		string videos_folder = Path.Combine(Application.dataPath, VideosFolderRelative);
+		string videos_folder = Path.Combine(Application.streamingAssetsPath, VideosFolderRelative);
 		if (!Directory.Exists(videos_folder))
 		{
 			Debug.LogWarning("[video_manager] videos folder missing: " + videos_folder);
@@ -311,7 +316,7 @@ public class VideoManager : MonoBehaviour
 	{
 		sentences.Clear();
 
-		string word_list_path = Path.Combine(Application.dataPath, WordListRelative);
+		string word_list_path = Path.Combine(Application.streamingAssetsPath, WordListRelative);
 		if (!File.Exists(word_list_path))
 		{
 			Debug.LogWarning("[video_manager] word list missing: " + word_list_path);
@@ -453,16 +458,24 @@ public class VideoManager : MonoBehaviour
 			return;
 
 		string video_path = video_paths[index];
+		string normalized_path = video_path.Replace('\\', '/');
 
 		prepared_video_index = index;
-		CurrentPreparedVideoPath = video_path;
+		CurrentPreparedVideoPath = normalized_path;
 		VideoPlayer.Stop();
 		VideoPlayer.time = 0d;
 		Clear_video_texture();
-		VideoPlayer.url = video_path;
+		VideoPlayer.url = normalized_path;
+		VideoPlayer.errorReceived -= On_video_error;
+		VideoPlayer.errorReceived += On_video_error;
 		VideoPlayer.Prepare();
 
-		Debug.Log("[video_manager] prepare | index=" + index + " | path=" + video_path);
+		Debug.Log("[video_manager] prepare | index=" + index + " | path=" + normalized_path);
+	}
+
+	void On_video_error(VideoPlayer source, string message)
+	{
+		Debug.LogError("[video_manager] video error | url=" + (source != null ? source.url : "null") + " | message=" + message);
 	}
 
 	public void Play_video_event()

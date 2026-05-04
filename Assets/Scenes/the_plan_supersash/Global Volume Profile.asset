@@ -15,7 +15,7 @@ MonoBehaviour:
   active: 1
   mode:
     m_OverrideState: 1
-    m_Value: 3
+    m_Value: 1
   useFullACES:
     m_OverrideState: 0
     m_Value: 0
@@ -137,7 +137,7 @@ MonoBehaviour:
     m_Value: 0
   exposure:
     m_OverrideState: 1
-    m_Value: 5.98
+    m_Value: 3.63
   multiplier:
     m_OverrideState: 0
     m_Value: 1
@@ -148,8 +148,8 @@ MonoBehaviour:
     m_OverrideState: 1
     m_Value: {x: 0.42272756, y: 0.4368014, z: 0.5}
   desiredLuxValue:
-    m_OverrideState: 0
-    m_Value: 20000
+    m_OverrideState: 1
+    m_Value: 100
   updateMode:
     m_OverrideState: 1
     m_Value: 0
@@ -274,7 +274,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bcf384b154398e341b6b29969c078198, type: 3}
   m_Name: MotionBlur
   m_EditorClassIdentifier: Unity.RenderPipelines.HighDefinition.Runtime::UnityEngine.Rendering.HighDefinition.MotionBlur
-  active: 0
+  active: 1
   quality:
     m_OverrideState: 1
     m_Value: 2

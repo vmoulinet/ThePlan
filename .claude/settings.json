@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Read(//c/Users/OmenHp/AppData/LocalLow/DefaultCompany/Chase/**)",
+      "Read(//c/Users/OmenHp/AppData/LocalLow/**)"
     ]
   }
 }

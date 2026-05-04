@@ -11,5 +11,11 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/the_plan_supersash.unity
     guid: c1d3e9f1e65f04e1cb028a23156768c5
+  - enabled: 0
+    path: Assets/Scenes/the_plan_moshe_copy.unity
+    guid: 3397324317a609245bed0e994846616b
+  - enabled: 0
+    path: Assets/Scenes/BuildTest.unity
+    guid: 7d6b726aa52ee0147864c308a6d95d09
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0
