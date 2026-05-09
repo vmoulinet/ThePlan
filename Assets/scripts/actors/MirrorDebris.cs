@@ -19,6 +19,10 @@ public class MirrorDebris : MonoBehaviour
 	public float SinkDestroyBelowY = -10f;
 
 	SoundManager sound_manager;
+	MirrorActor source_actor;
+	Vector3 source_inherited_velocity = Vector3.zero;
+	Vector3 source_impact_direction = Vector3.zero;
+	float source_impact_speed = 0f;
 
 	Rigidbody[] cached_bodies;
 	Vector3[] initial_local_positions;
@@ -62,6 +66,10 @@ public class MirrorDebris : MonoBehaviour
 
 		is_sinking = false;
 		activate_time = Time.time;
+		source_actor = null;
+		source_inherited_velocity = Vector3.zero;
+		source_impact_direction = Vector3.zero;
+		source_impact_speed = 0f;
 
 		for (int i = 0; i < cached_bodies.Length; i++)
 		{
@@ -128,6 +136,10 @@ public class MirrorDebris : MonoBehaviour
 			return;
 
 		activate_time = Time.time;
+		source_actor = actor;
+		source_inherited_velocity = actor.Velocity * InheritedVelocityMultiplier;
+		source_impact_direction = actor.LastBreakImpactDirection;
+		source_impact_speed = actor.LastBreakImpactSpeed;
 
 		if (actor.MirrorManager != null)
 			sound_manager = actor.MirrorManager.SoundManager;
@@ -152,41 +164,21 @@ public class MirrorDebris : MonoBehaviour
 			cached_bodies = GetComponentsInChildren<Rigidbody>(true);
 
 		Rigidbody[] bodies = cached_bodies;
-		MirrorActor source_actor = null;
-		MirrorActor[] actors = FindObjectsByType<MirrorActor>(FindObjectsSortMode.None);
-
-		float nearest_distance = float.MaxValue;
-		for (int i = 0; i < actors.Length; i++)
-		{
-			MirrorActor actor = actors[i];
-			if (actor == null)
-				continue;
-
-			float distance = Vector3.Distance(actor.transform.position, transform.position);
-			if (distance < nearest_distance)
-			{
-				nearest_distance = distance;
-				source_actor = actor;
-			}
-		}
-
-		Vector3 inherited_velocity = Vector3.zero;
+		Vector3 inherited_velocity = source_inherited_velocity;
 		Vector3 directional_impulse = Vector3.zero;
 
-		if (source_actor != null)
+		if (source_impact_direction.sqrMagnitude > 0.0001f && source_impact_speed > 0f)
 		{
-			inherited_velocity = source_actor.Velocity * InheritedVelocityMultiplier;
-
-			if (source_actor.LastBreakImpactDirection.sqrMagnitude > 0.0001f)
-			{
-				float impulse_strength = Mathf.Min(source_actor.LastBreakImpactSpeed * DirectionalImpulseMultiplier, MaxDirectionalImpulse);
-				directional_impulse = source_actor.LastBreakImpactDirection.normalized * impulse_strength;
-			}
+			float impulse_strength = Mathf.Min(source_impact_speed * DirectionalImpulseMultiplier, MaxDirectionalImpulse);
+			directional_impulse = source_impact_direction.normalized * impulse_strength;
 		}
 
 		for (int i = 0; i < bodies.Length; i++)
 		{
 			Rigidbody body = bodies[i];
+			if (body == null)
+				continue;
+
 			body.linearVelocity = inherited_velocity;
 			body.AddExplosionForce(force, impactPoint, radius, upwardModifier, ForceMode.Impulse);
 
@@ -198,8 +190,11 @@ public class MirrorDebris : MonoBehaviour
 		{
 			Debug.Log(
 				name +
-				" | debris impact | force=" + force.ToString("F2") +
+				" | debris impact | source_actor=" + (source_actor != null ? source_actor.name : "null") +
+				" | force=" + force.ToString("F2") +
 				" | radius=" + radius.ToString("F2") +
+				" | source_direction=" + source_impact_direction.ToString("F2") +
+				" | source_speed=" + source_impact_speed.ToString("F2") +
 				" | inherited_velocity=" + inherited_velocity.ToString("F2") +
 				" | directional_impulse=" + directional_impulse.ToString("F2") +
 				" | bodies=" + bodies.Length
