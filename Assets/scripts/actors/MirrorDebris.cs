@@ -12,15 +12,6 @@ public class MirrorDebris : MonoBehaviour
 	public float DirectionalImpulseMultiplier = 0.45f;
 	public float MaxDirectionalImpulse = 8f;
 
-	[Header("Ground Impact")]
-	public LayerMask GroundLayers = ~0;
-	public float GroundImpactSpeedThreshold = 1.5f;
-	public float GroundImpactCooldown = 0.08f;
-
-	[Header("Debris Loop")]
-	public float DebrisLoopSpeedForMax = 6f;
-	public float DebrisLoopLerpSpeed = 10f;
-
 	[Header("Sink")]
 	public float SinkForceLight = 1f;
 	public float SinkForceFast = 20f;
@@ -32,8 +23,6 @@ public class MirrorDebris : MonoBehaviour
 	Rigidbody[] cached_bodies;
 	Vector3[] initial_local_positions;
 	Quaternion[] initial_local_rotations;
-	float last_ground_impact_time = -999f;
-	float current_loop_amount = 0f;
 	bool is_sinking = false;
 	bool snapshot_taken = false;
 	float activate_time = 0f;
@@ -72,8 +61,6 @@ public class MirrorDebris : MonoBehaviour
 		CacheAndSnapshot();
 
 		is_sinking = false;
-		last_ground_impact_time = -999f;
-		current_loop_amount = 0f;
 		activate_time = Time.time;
 
 		for (int i = 0; i < cached_bodies.Length; i++)
@@ -121,10 +108,7 @@ public class MirrorDebris : MonoBehaviour
 	void Update()
 	{
 		if (!is_sinking)
-		{
-			UpdateSound();
 			return;
-		}
 
 		float speed = sink_y_offset < SinkFastBelowY ? SinkForceFast : SinkForceLight;
 		sink_y_offset -= speed * Time.deltaTime;
@@ -138,79 +122,6 @@ public class MirrorDebris : MonoBehaviour
 		transform.position += Vector3.down * speed * Time.deltaTime;
 	}
 
-	void UpdateSound()
-	{
-		if (sound_manager == null)
-			return;
-
-		if (cached_bodies == null || cached_bodies.Length == 0)
-			cached_bodies = GetComponentsInChildren<Rigidbody>(true);
-
-		float max_horizontal_speed = 0f;
-
-		for (int i = 0; i < cached_bodies.Length; i++)
-		{
-			Rigidbody body = cached_bodies[i];
-			if (body == null)
-				continue;
-
-			Vector3 horizontal_velocity = body.linearVelocity;
-			horizontal_velocity.y = 0f;
-			float horizontal_speed = horizontal_velocity.magnitude;
-			if (horizontal_speed > max_horizontal_speed)
-				max_horizontal_speed = horizontal_speed;
-		}
-
-		float target_loop_amount = Mathf.Clamp01(max_horizontal_speed / Mathf.Max(0.0001f, DebrisLoopSpeedForMax));
-		current_loop_amount = Mathf.MoveTowards(current_loop_amount, target_loop_amount, DebrisLoopLerpSpeed * Time.deltaTime);
-		sound_manager.SetDebrisAmount(current_loop_amount);
-	}
-
-	void HandleBodyCollision(Collision collision, Rigidbody body)
-	{
-		if (collision == null || body == null)
-			return;
-
-		int other_layer_mask = 1 << collision.gameObject.layer;
-		if ((GroundLayers.value & other_layer_mask) == 0)
-			return;
-
-		if (Time.time - last_ground_impact_time < GroundImpactCooldown)
-			return;
-
-		float impact_speed = collision.relativeVelocity.magnitude;
-		if (impact_speed < GroundImpactSpeedThreshold)
-			return;
-
-		last_ground_impact_time = Time.time;
-
-		Vector3 impact_point = collision.contactCount > 0 ? collision.GetContact(0).point : body.worldCenterOfMass;
-		if (sound_manager != null)
-			sound_manager.PlayDebrisImpact(impact_point);
-	}
-
-	class MirrorDebrisBodyNotifier : MonoBehaviour
-	{
-		public MirrorDebris Owner;
-		Rigidbody cached_body;
-
-		void Awake()
-		{
-			cached_body = GetComponent<Rigidbody>();
-		}
-
-		void OnCollisionEnter(Collision collision)
-		{
-			if (Owner == null)
-				return;
-
-			if (cached_body == null)
-				cached_body = GetComponent<Rigidbody>();
-
-			Owner.HandleBodyCollision(collision, cached_body);
-		}
-	}
-
 	public void InitializeFromMirror(MirrorActor actor)
 	{
 		if (actor == null)
@@ -221,6 +132,9 @@ public class MirrorDebris : MonoBehaviour
 		if (actor.MirrorManager != null)
 			sound_manager = actor.MirrorManager.SoundManager;
 
+		if (sound_manager != null)
+			sound_manager.PlayMirrorBreak(actor.transform.position);
+
 		cached_bodies = GetComponentsInChildren<Rigidbody>(true);
 		transform.position = actor.transform.position;
 		transform.rotation = actor.transform.rotation;
@@ -229,19 +143,6 @@ public class MirrorDebris : MonoBehaviour
 		{
 			float wrapped_panel_x = Mathf.DeltaAngle(0f, actor.CurrentPanelXAngle);
 			BrokenMirrorPivotX.localRotation = Quaternion.AngleAxis(wrapped_panel_x, Vector3.right);
-		}
-
-		for (int i = 0; i < cached_bodies.Length; i++)
-		{
-			Rigidbody body = cached_bodies[i];
-			if (body == null)
-				continue;
-
-			MirrorDebrisBodyNotifier notifier = body.GetComponent<MirrorDebrisBodyNotifier>();
-			if (notifier == null)
-				notifier = body.gameObject.AddComponent<MirrorDebrisBodyNotifier>();
-
-			notifier.Owner = this;
 		}
 	}
 
