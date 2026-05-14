@@ -3,7 +3,11 @@
     "allow": [
       "Bash(git checkout *)",
       "Read(//c/Users/OmenHp/AppData/LocalLow/DefaultCompany/Chase/**)",
-      "Read(//c/Users/OmenHp/AppData/LocalLow/**)"
+      "Read(//c/Users/OmenHp/AppData/LocalLow/**)",
+      "Read(//c/Users/OmenHp/.claude/projects/c--Users-OmenHp-Documents-GitHub-Chase/memory/**)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\OmenHp\\.claude\\projects\\c--Users-OmenHp-Documents-GitHub-Chase\\memory"
     ]
   }
 }

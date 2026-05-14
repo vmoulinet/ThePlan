@@ -81,7 +81,6 @@ public class MirrorActor : MonoBehaviour
 	Collider[] debris_push_hits = new Collider[12];
 	Collider[] own_colliders;
 	float base_max_ground_speed;
-	bool speed_override_active = false;
 	float speed_boost_multiplier = 1f;
 	float speed_boost_timer = 0f;
 	float speed_boost_initial_multiplier = 1f;
@@ -782,13 +781,11 @@ public class MirrorActor : MonoBehaviour
 
 	public void SetSpeedOverride(float speed)
 	{
-		speed_override_active = true;
 		MaxGroundSpeed = speed;
 	}
 
 	public void ClearSpeedOverride()
 	{
-		speed_override_active = false;
 		MaxGroundSpeed = base_max_ground_speed * Random.Range(1f - SpeedRandomRange, 1f + SpeedRandomRange);
 	}
 

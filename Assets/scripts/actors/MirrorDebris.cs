@@ -78,9 +78,9 @@ public class MirrorDebris : MonoBehaviour
 
 			cached_bodies[i].transform.localPosition = initial_local_positions[i];
 			cached_bodies[i].transform.localRotation = initial_local_rotations[i];
+			cached_bodies[i].isKinematic = false;
 			cached_bodies[i].linearVelocity = Vector3.zero;
 			cached_bodies[i].angularVelocity = Vector3.zero;
-			cached_bodies[i].isKinematic = false;
 			cached_bodies[i].useGravity = true;
 			cached_bodies[i].detectCollisions = true;
 		}

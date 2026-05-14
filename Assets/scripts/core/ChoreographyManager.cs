@@ -104,7 +104,6 @@ public class ChoreographyManager : MonoBehaviour
 	public event Action<ChoreographyState> ChoreographyPatternCompleted;
 	public event Action TriangleSettled;
 
-	float circleHoldTimer;
 	float debugLogTimer;
 	float circlePhaseTimer;
 
@@ -941,7 +940,6 @@ if (average_speed > TriangleStableAverageSpeedThreshold)
 	{
 		CurrentState = ChoreographyState.Circle;
 		CurrentCirclePhase = CirclePhase.Move;
-		circleHoldTimer = 0f;
 		circlePhaseTimer = 0f;
 		activePatternTimer = 0f;
 		circleOrbitAccumulated = 0f;

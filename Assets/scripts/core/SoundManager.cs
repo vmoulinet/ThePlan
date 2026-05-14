@@ -195,7 +195,7 @@ public class SoundManager : MonoBehaviour
 		source.pitch = pitch;
 		source.spatialBlend = Mathf.Clamp01(spatial_blend);
 		source.playOnAwake = false;
-		source.PlayOneShot(clip, Mathf.Clamp01(volume));
+		source.PlayOneShot(clip, Mathf.Max(0f, volume));
 
 		Destroy(one_shot_object, clip.length / Mathf.Max(0.01f, Mathf.Abs(pitch)) + 0.1f);
 

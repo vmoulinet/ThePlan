@@ -65,18 +65,18 @@ Material:
     - _BlendMode: 0
     - _Color_Gradient_End: 0.1
     - _ConservativeDepthOffsetEnable: 0
-    - _Counter_Flow_Speed: 0.25
+    - _Counter_Flow_Speed: 0
     - _CullMode: 2
     - _CullModeForward: 2
     - _DepthOffsetEnable: 0
     - _DetailSpeed: 1
-    - _Detail_Tiling: 0.85
+    - _Detail_Tiling: -0.02
     - _DoubleSidedEnable: 0
     - _DoubleSidedGIMode: 0
     - _DoubleSidedNormalMode: 2
     - _DstBlend: 0
     - _EnableFogOnTransparent: 1
-    - _Flatten: 2
+    - _Flatten: 1.68
     - _Float: 4
     - _FogVolumeAlphaBlendOp: 0
     - _FogVolumeBlendMode: 1
@@ -97,7 +97,7 @@ Material:
     - _SrcBlend: 1
     - _SurfaceType: 0
     - _TIling: 1
-    - _Tiling: 0.5
+    - _Tiling: 0.22
     - _TransparentBackfaceEnable: 0
     - _TransparentCullMode: 2
     - _TransparentDepthPostpassEnable: 0
@@ -107,13 +107,13 @@ Material:
     - _TransparentZWrite: 0
     - _Up_Stretch: 4
     - _UseShadowThreshold: 0
-    - _Wind_Speed: 0.01
+    - _Wind_Speed: 0.02
     - _ZTestDepthEqualForOpaque: 4
     - _ZTestTransparent: 4
     - _ZWrite: 1
     - _alpha: 1
     m_Colors:
-    - _Bottom_Color: {r: 0.47267708, g: 0.73102427, b: 0.8867924, a: 1}
+    - _Bottom_Color: {r: 0.6037736, g: 0.5952296, b: 0.5952296, a: 1}
     - _Color: {r: 1, g: 0.92878336, b: 0.83647794, a: 0}
     - _Color2: {r: 0.7169812, g: 0.55657834, b: 0.34270793, a: 1}
     - _DetailDirection: {r: 0, g: 0, b: 1, a: 0}
@@ -122,9 +122,9 @@ Material:
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
     - _FogVolumeSingleScatteringAlbedo: {r: 1, g: 1, b: 1, a: 1}
     - _Offset: {r: 0, g: 0, b: 0, a: 0}
-    - _Top_Color: {r: 0.6697223, g: 0.7685034, b: 0.8113208, a: 1}
+    - _Top_Color: {r: 0.764151, g: 0.764151, b: 0.764151, a: 1}
     - _Vector3: {r: 1, g: 0, b: 0, a: 0}
-    - _Wind_Direction: {r: 0, g: 1, b: 0, a: 0}
+    - _Wind_Direction: {r: -1.35, g: 0, b: -45.23, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &2064897693191722383

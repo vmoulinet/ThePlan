@@ -8,9 +8,11 @@ public class DaddyLetterProjector : MonoBehaviour
 {
 	[Header("Source")]
 	public TextAsset LetterAsset;
+	public TextAsset LetterAssetJP;
 
 	[Header("Display")]
 	public TextMeshPro TargetText;
+	public TextMeshPro TargetTextJP;
 
 	[Header("Cookie Output")]
 	public Light ProjectorLight;
@@ -19,12 +21,20 @@ public class DaddyLetterProjector : MonoBehaviour
 	public int CookieResolution = 1024;
 	public bool AssignCookieAtStart = true;
 
-	[Header("Typing")]
+	[Header("Typing (EN)")]
 	public float BaseCharDelay = 0.06f;
 	public float CharDelayJitter = 0.2f;
 	public float PunctuationDelay = 0.35f;
 	public float NewlineDelay = 0.7f;
 	public float ParagraphDelay = 1.2f;
+
+	[Header("Typing (JP)")]
+	public bool UseSeparateJPTiming = true;
+	public float BaseCharDelayJP = 0.10f;
+	public float CharDelayJitterJP = 0.2f;
+	public float PunctuationDelayJP = 0.45f;
+	public float NewlineDelayJP = 0.7f;
+	public float ParagraphDelayJP = 1.2f;
 
 	[Header("Erase")]
 	public float EraseCharDelay = 0.025f;
@@ -35,6 +45,12 @@ public class DaddyLetterProjector : MonoBehaviour
 	[Header("Lifecycle")]
 	public float RestartDelay = 1.0f;
 	public float HoldAfterFinishedDelay = 4.0f;
+	public VideoManager VideoManager;
+	public WorldValidation WorldValidation;
+	public float RestartWaitTimeout = 30f;
+
+	[Header("Audio")]
+	public SoundManager SoundManager;
 
 	[Header("Redaction")]
 	public string RedactionMarkOpen = "<mark=#FFFFFFFF padding=\"6,6,2,2\">";
@@ -64,10 +80,19 @@ public class DaddyLetterProjector : MonoBehaviour
 		public bool redacted;
 	}
 
+	enum EraseSource
+	{
+		Natural,
+		Stomp,
+		WorldValidation
+	}
+
 	string source_text = "";
 	int typed_count = 0;
 	State current_state = State.Idle;
 	Coroutine state_coroutine = null;
+	bool is_japanese_cycle = false;
+	EraseSource last_erase_source = EraseSource.Natural;
 
 	readonly List<WordSpan> word_spans = new List<WordSpan>();
 	int current_word_index = -1;
@@ -83,8 +108,31 @@ public class DaddyLetterProjector : MonoBehaviour
 		BuildWordSpans();
 		EnsureCookieTexture();
 		AssignCookieToLight();
+		ApplyActiveTargetForCycle();
 		ApplyTextToTarget();
 		BeginTyping();
+	}
+
+	TextMeshPro ActiveText
+	{
+		get { return is_japanese_cycle ? TargetTextJP : TargetText; }
+	}
+
+	void ApplyActiveTargetForCycle()
+	{
+		if (TargetText != null)
+		{
+			TargetText.gameObject.SetActive(!is_japanese_cycle);
+			if (!is_japanese_cycle)
+				TargetText.text = "";
+		}
+
+		if (TargetTextJP != null)
+		{
+			TargetTextJP.gameObject.SetActive(is_japanese_cycle);
+			if (is_japanese_cycle)
+				TargetTextJP.text = "";
+		}
 	}
 
 	void Update()
@@ -98,14 +146,16 @@ public class DaddyLetterProjector : MonoBehaviour
 
 	void LoadLetter()
 	{
-		if (LetterAsset == null)
+		TextAsset asset = is_japanese_cycle ? LetterAssetJP : LetterAsset;
+
+		if (asset == null)
 		{
-			Debug.LogError("[daddy_letter] LetterAsset is missing");
+			Debug.LogError("[daddy_letter] LetterAsset is missing (japanese=" + is_japanese_cycle + ")");
 			source_text = "";
 			return;
 		}
 
-		source_text = LetterAsset.text.Replace("\r\n", "\n").Replace("\r", "\n");
+		source_text = asset.text.Replace("\r\n", "\n").Replace("\r", "\n");
 	}
 
 	void BuildWordSpans()
@@ -179,7 +229,16 @@ public class DaddyLetterProjector : MonoBehaviour
 		ApplyTextToTarget();
 
 		current_state = State.Typing;
+		SetTypingSound(true);
 		state_coroutine = StartCoroutine(TypeRoutine());
+	}
+
+	void SetTypingSound(bool active)
+	{
+		if (SoundManager == null)
+			return;
+
+		SoundManager.SetTypingLoopActive(active);
 	}
 
 	void StopActiveCoroutine()
@@ -211,36 +270,46 @@ public class DaddyLetterProjector : MonoBehaviour
 
 		current_state = State.Holding;
 		SetCursorArmed(true);
+		SetTypingSound(false);
 		ApplyTextToTarget();
 
 		if (HoldAfterFinishedDelay > 0f)
 			yield return new WaitForSeconds(HoldAfterFinishedDelay);
 
 		SetCursorArmed(false);
+		last_erase_source = EraseSource.Natural;
 		BeginErase();
 	}
 
 	float ComputeTypingDelay(char c)
 	{
-		float delay = BaseCharDelay;
+		bool jp = is_japanese_cycle && UseSeparateJPTiming;
+
+		float base_delay = jp ? BaseCharDelayJP : BaseCharDelay;
+		float punctuation_delay = jp ? PunctuationDelayJP : PunctuationDelay;
+		float newline_delay = jp ? NewlineDelayJP : NewlineDelay;
+		float paragraph_delay = jp ? ParagraphDelayJP : ParagraphDelay;
+		float jitter = jp ? CharDelayJitterJP : CharDelayJitter;
+
+		float delay = base_delay;
 
 		if (c == '\n')
 		{
 			bool is_paragraph = typed_count < source_text.Length && source_text[typed_count] == '\n';
-			delay = is_paragraph ? ParagraphDelay : NewlineDelay;
+			delay = is_paragraph ? paragraph_delay : newline_delay;
 		}
-		else if (c == '.' || c == '!' || c == '?')
+		else if (c == '.' || c == '!' || c == '?' || c == '。' || c == '！' || c == '？')
 		{
-			delay = PunctuationDelay;
+			delay = punctuation_delay;
 		}
-		else if (c == ',' || c == ';' || c == ':')
+		else if (c == ',' || c == ';' || c == ':' || c == '、' || c == '：' || c == '；')
 		{
-			delay = PunctuationDelay * 0.6f;
+			delay = punctuation_delay * 0.6f;
 		}
 
-		if (CharDelayJitter > 0f)
+		if (jitter > 0f)
 		{
-			float j = 1f + Random.Range(-CharDelayJitter, CharDelayJitter);
+			float j = 1f + Random.Range(-jitter, jitter);
 			delay *= Mathf.Max(0.05f, j);
 		}
 
@@ -250,6 +319,7 @@ public class DaddyLetterProjector : MonoBehaviour
 	void BeginErase()
 	{
 		StopActiveCoroutine();
+		SetTypingSound(false);
 		current_state = State.Erasing;
 		state_coroutine = StartCoroutine(EraseRoutine());
 	}
@@ -298,10 +368,48 @@ public class DaddyLetterProjector : MonoBehaviour
 
 		current_state = State.Restarting;
 
+		yield return StartCoroutine(WaitForTriggeringEventToFinish());
+
 		if (RestartDelay > 0f)
 			yield return new WaitForSeconds(RestartDelay);
 
+		is_japanese_cycle = !is_japanese_cycle;
+		LoadLetter();
+		BuildWordSpans();
+		ApplyActiveTargetForCycle();
+
 		BeginTyping();
+	}
+
+	IEnumerator WaitForTriggeringEventToFinish()
+	{
+		float elapsed = 0f;
+
+		if (last_erase_source == EraseSource.Stomp && VideoManager != null)
+		{
+			if (DebugLog)
+				Debug.Log("[daddy_letter] restart wait | source=stomp | video_playing=" + VideoManager.IsPlayingEvent);
+
+			while (VideoManager.IsPlayingEvent && elapsed < RestartWaitTimeout)
+			{
+				elapsed += Time.unscaledDeltaTime;
+				yield return null;
+			}
+		}
+		else if (last_erase_source == EraseSource.WorldValidation && WorldValidation != null)
+		{
+			if (DebugLog)
+				Debug.Log("[daddy_letter] restart wait | source=world_validation | active=" + WorldValidation.IsActive);
+
+			while (WorldValidation.IsActive && elapsed < RestartWaitTimeout)
+			{
+				elapsed += Time.unscaledDeltaTime;
+				yield return null;
+			}
+		}
+
+		if (DebugLog && elapsed > 0f)
+			Debug.Log("[daddy_letter] restart wait done | source=" + last_erase_source + " | elapsed=" + elapsed.ToString("F2"));
 	}
 
 	public void NotifyMirrorBroken()
@@ -335,15 +443,15 @@ public class DaddyLetterProjector : MonoBehaviour
 
 	public void NotifyStomp()
 	{
-		TriggerBackErase("stomp");
+		TriggerBackErase("stomp", EraseSource.Stomp);
 	}
 
 	public void NotifyWorldValidation()
 	{
-		TriggerBackErase("world_validation");
+		TriggerBackErase("world_validation", EraseSource.WorldValidation);
 	}
 
-	void TriggerBackErase(string source)
+	void TriggerBackErase(string source, EraseSource erase_source)
 	{
 		if (current_state == State.Erasing || current_state == State.Restarting)
 			return;
@@ -351,6 +459,7 @@ public class DaddyLetterProjector : MonoBehaviour
 		if (DebugLog)
 			Debug.Log("[daddy_letter] back-erase trigger | source=" + source + " | typed=" + typed_count);
 
+		last_erase_source = erase_source;
 		BeginErase();
 	}
 
@@ -404,10 +513,11 @@ public class DaddyLetterProjector : MonoBehaviour
 
 	void ApplyTextToTarget()
 	{
-		if (TargetText == null)
+		TextMeshPro target = ActiveText;
+		if (target == null)
 			return;
 
-		TargetText.text = BuildDisplayText();
+		target.text = BuildDisplayText();
 	}
 
 	void SetCursorArmed(bool armed)
