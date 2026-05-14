@@ -8,9 +8,14 @@ public class MirrorDebris : MonoBehaviour
 	[Header("Debug")]
 	public bool DebugDebris = false;
 	public float PendulumIgnoreDuration = 0.2f;
-	public float InheritedVelocityMultiplier = 0.65f;
-	public float DirectionalImpulseMultiplier = 0.45f;
-	public float MaxDirectionalImpulse = 8f;
+
+	[Header("Impact")]
+	public float ImpactForce = 6f;
+	public float ImpactForceRandom = 1f;
+	public float ImpactUpwardForce = 2f;
+	public float ImpactUpwardForceRandom = 1f;
+	public float ImpactTorque = 4f;
+	public float ImpactTorqueRandom = 1f;
 
 	[Header("Sink")]
 	public float SinkForceLight = 1f;
@@ -20,9 +25,7 @@ public class MirrorDebris : MonoBehaviour
 
 	SoundManager sound_manager;
 	MirrorActor source_actor;
-	Vector3 source_inherited_velocity = Vector3.zero;
 	Vector3 source_impact_direction = Vector3.zero;
-	float source_impact_speed = 0f;
 
 	Rigidbody[] cached_bodies;
 	Vector3[] initial_local_positions;
@@ -67,9 +70,7 @@ public class MirrorDebris : MonoBehaviour
 		is_sinking = false;
 		activate_time = Time.time;
 		source_actor = null;
-		source_inherited_velocity = Vector3.zero;
 		source_impact_direction = Vector3.zero;
-		source_impact_speed = 0f;
 
 		for (int i = 0; i < cached_bodies.Length; i++)
 		{
@@ -137,9 +138,7 @@ public class MirrorDebris : MonoBehaviour
 
 		activate_time = Time.time;
 		source_actor = actor;
-		source_inherited_velocity = actor.Velocity * InheritedVelocityMultiplier;
 		source_impact_direction = actor.LastBreakImpactDirection;
-		source_impact_speed = actor.LastBreakImpactSpeed;
 
 		if (actor.MirrorManager != null)
 			sound_manager = actor.MirrorManager.SoundManager;
@@ -158,32 +157,37 @@ public class MirrorDebris : MonoBehaviour
 		}
 	}
 
-	public void ApplyImpact(Vector3 impactPoint, float force, float radius, float upwardModifier)
+	public void ApplyImpact()
 	{
 		if (cached_bodies == null || cached_bodies.Length == 0)
 			cached_bodies = GetComponentsInChildren<Rigidbody>(true);
 
-		Rigidbody[] bodies = cached_bodies;
-		Vector3 inherited_velocity = source_inherited_velocity;
-		Vector3 directional_impulse = Vector3.zero;
+		Vector3 horizontal_dir = source_impact_direction;
+		horizontal_dir.y = 0f;
 
-		if (source_impact_direction.sqrMagnitude > 0.0001f && source_impact_speed > 0f)
-		{
-			float impulse_strength = Mathf.Min(source_impact_speed * DirectionalImpulseMultiplier, MaxDirectionalImpulse);
-			directional_impulse = source_impact_direction.normalized * impulse_strength;
-		}
+		if (horizontal_dir.sqrMagnitude > 0.0001f)
+			horizontal_dir = horizontal_dir.normalized;
+		else
+			horizontal_dir = Vector3.zero;
 
-		for (int i = 0; i < bodies.Length; i++)
+		for (int i = 0; i < cached_bodies.Length; i++)
 		{
-			Rigidbody body = bodies[i];
+			Rigidbody body = cached_bodies[i];
 			if (body == null)
 				continue;
 
-			body.linearVelocity = inherited_velocity;
-			body.AddExplosionForce(force, impactPoint, radius, upwardModifier, ForceMode.Impulse);
+			float force = ImpactForce + Random.Range(-ImpactForceRandom, ImpactForceRandom);
+			float upward = ImpactUpwardForce + Random.Range(-ImpactUpwardForceRandom, ImpactUpwardForceRandom);
+			float torque = ImpactTorque + Random.Range(-ImpactTorqueRandom, ImpactTorqueRandom);
 
-			if (directional_impulse.sqrMagnitude > 0.0001f)
-				body.AddForce(directional_impulse, ForceMode.Impulse);
+			Vector3 impulse = horizontal_dir * force + Vector3.up * upward;
+
+			body.linearVelocity = Vector3.zero;
+			body.angularVelocity = Vector3.zero;
+			body.AddForce(impulse, ForceMode.VelocityChange);
+
+			if (torque > 0f)
+				body.AddTorque(Random.insideUnitSphere * torque, ForceMode.VelocityChange);
 		}
 
 		if (DebugDebris)
@@ -191,13 +195,9 @@ public class MirrorDebris : MonoBehaviour
 			Debug.Log(
 				name +
 				" | debris impact | source_actor=" + (source_actor != null ? source_actor.name : "null") +
-				" | force=" + force.ToString("F2") +
-				" | radius=" + radius.ToString("F2") +
-				" | source_direction=" + source_impact_direction.ToString("F2") +
-				" | source_speed=" + source_impact_speed.ToString("F2") +
-				" | inherited_velocity=" + inherited_velocity.ToString("F2") +
-				" | directional_impulse=" + directional_impulse.ToString("F2") +
-				" | bodies=" + bodies.Length
+				" | direction=" + horizontal_dir.ToString("F2") +
+				" | base_force=" + ImpactForce.ToString("F2") +
+				" | bodies=" + cached_bodies.Length
 			);
 		}
 	}

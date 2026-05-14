@@ -28,14 +28,6 @@ public class MirrorManager : MonoBehaviour
 	[Header("Debris Limit")]
 	public int MaxDebrisCount = 25;
 
-	[Header("Debris Impact")]
-	public float DebrisForce = 9f;
-	public float DebrisRadius = 3.5f;
-	public float DebrisUpwardModifier = 0.45f;
-	public float DebrisImpactSpeedMultiplier = 0.35f;
-	public float DebrisMaxBonusForce = 18f;
-	public float DebrisDirectionalBackshift = 1.2f;
-	public float DebrisDirectionalRadiusBonus = 0.75f;
 
 	readonly List<MirrorSpawnPoint> spawnPoints = new List<MirrorSpawnPoint>();
 	readonly List<MirrorDebris> debris_pool = new List<MirrorDebris>();
@@ -216,35 +208,7 @@ public class MirrorManager : MonoBehaviour
 
 		MirrorDebris debris = GetDebrisFromPool();
 		debris.InitializeFromMirror(mirror);
-
-		Vector3 impact_direction = mirror.LastBreakImpactDirection;
-		float impact_speed = mirror.LastBreakImpactSpeed;
-
-		float bonus_force = Mathf.Min(impact_speed * DebrisImpactSpeedMultiplier, DebrisMaxBonusForce);
-		float applied_force = DebrisForce + bonus_force;
-		float applied_radius = DebrisRadius;
-		Vector3 applied_impact_point = impactPoint;
-
-		if (impact_direction.sqrMagnitude > 0.0001f)
-		{
-			applied_impact_point -= impact_direction.normalized * DebrisDirectionalBackshift;
-			applied_radius += DebrisDirectionalRadiusBonus;
-		}
-
-		debris.ApplyImpact(applied_impact_point, applied_force, applied_radius, DebrisUpwardModifier);
-
-		if (mirror.DebugDraw)
-		{
-			Debug.Log(
-				"[mirror_manager] debris | mirror=" + mirror.name +
-				" | impact_point=" + impactPoint.ToString("F2") +
-				" | applied_impact_point=" + applied_impact_point.ToString("F2") +
-				" | impact_dir=" + impact_direction.ToString("F2") +
-				" | impact_speed=" + impact_speed.ToString("F2") +
-				" | applied_force=" + applied_force.ToString("F2") +
-				" | applied_radius=" + applied_radius.ToString("F2")
-			);
-		}
+		debris.ApplyImpact();
 	}
 
 	MirrorDebris GetDebrisFromPool()
