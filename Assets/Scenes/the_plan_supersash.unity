@@ -2943,13 +2943,6 @@ MonoBehaviour:
   RespawnDelay: 1
   RespawnRingSpacing: 0.75
   MaxDebrisCount: 25
-  DebrisForce: 0.82
-  DebrisRadius: 2.81
-  DebrisUpwardModifier: 0.47
-  DebrisImpactSpeedMultiplier: 1
-  DebrisMaxBonusForce: 3
-  DebrisDirectionalBackshift: 1.2
-  DebrisDirectionalRadiusBonus: 2
   BreakBoostMultiplier: 1.91
   BreakBoostDuration: 7.66
   EnableDebugBreakAll: 1

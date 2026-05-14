@@ -4,7 +4,12 @@
       "Bash(git checkout *)",
       "Read(//c/Users/OmenHp/AppData/LocalLow/DefaultCompany/Chase/**)",
       "Read(//c/Users/OmenHp/AppData/LocalLow/**)",
-      "Read(//c/Users/OmenHp/.claude/projects/c--Users-OmenHp-Documents-GitHub-Chase/memory/**)"
+      "Read(//c/Users/OmenHp/.claude/projects/c--Users-OmenHp-Documents-GitHub-Chase/memory/**)",
+      "PowerShell(Get-WinEvent -LogName \"Microsoft-Windows-AppLocker/EXE and DLL\" -MaxEvents 30 -ErrorAction SilentlyContinue | Where-Object {$_.Id -ne 8001 -and $_.Id -ne 8002} | Select-Object TimeCreated, Id, LevelDisplayName, @{N='Msg';E={$_.Message.Substring\\(0,[Math]::Min\\(200,$_.Message.Length\\)\\)}} | Format-List)",
+      "PowerShell(Get-WinEvent -LogName \"Security\" -MaxEvents 50 -ErrorAction SilentlyContinue | Where-Object {$_.Message -match \"DAEMON|DTLite|uninst\"} | Select-Object TimeCreated, Id, @{N='Msg';E={$_.Message.Substring\\(0,[Math]::Min\\(300,$_.Message.Length\\)\\)}} | Format-List)",
+      "PowerShell(Start-Process -FilePath \"C:\\\\Program Files\\\\DAEMON Tools Lite\\\\uninst.exe\" -ArgumentList \"/S\" -Verb RunAs -ErrorAction Stop; Write-Output \"Lancé\")",
+      "PowerShell(Copy-Item \"C:\\\\Program Files\\\\DAEMON Tools Lite\\\\uninst.exe\" \"$env:TEMP\\\\dt_uninst.exe\" -Force; Unblock-File \"$env:TEMP\\\\dt_uninst.exe\"; Get-Item \"$env:TEMP\\\\dt_uninst.exe\" | Format-List Name, Length, LastWriteTime; Write-Output \"---Lancement---\"; Start-Process \"$env:TEMP\\\\dt_uninst.exe\")",
+      "PowerShell($sig = Get-AuthenticodeSignature \"C:\\\\Program Files\\\\DAEMON Tools Lite\\\\uninst.exe\"; Write-Output \"Status: $\\($sig.Status\\)\"; Write-Output \"StatusMessage: $\\($sig.StatusMessage\\)\"; Write-Output \"SignerCert: $\\($sig.SignerCertificate.Subject\\)\"; Write-Output \"NotAfter: $\\($sig.SignerCertificate.NotAfter\\)\")"
     ],
     "additionalDirectories": [
       "c:\\Users\\OmenHp\\.claude\\projects\\c--Users-OmenHp-Documents-GitHub-Chase\\memory"
